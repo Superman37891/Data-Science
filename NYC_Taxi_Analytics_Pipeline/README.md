@@ -1,5 +1,8 @@
 NYC Taxi Analytics Pipeline
 
+**Streamlit App Link**
+NYC-Taxi-Analytics-Pipeline-lygml4pfy63ezzfxmragqi.streamlit.app
+
 **Project Overview**
 This project is an end-to-end data engineering pipeline that ingests, cleans, and analyzes NYC Yellow Taxi trip data. Using AWS services and modern data stack tools, this project demonstrates the ability to handle millions of rows, optimize storage costs, and deliver actionable business insights via an interactive dashboard.
 
