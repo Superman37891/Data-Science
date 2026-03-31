@@ -1,0 +1,28 @@
+# Data folders
+data/
+*.csv
+*.parquet
+
+# Environment variables
+.env
+
+# Virtual env
+venv/
+.env/
+.venv
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+
+# IDE
+.idea/
+
+# Streamlit cache
+.streamlit/
+
+# Logs
+*.log
