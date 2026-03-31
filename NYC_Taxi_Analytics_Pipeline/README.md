@@ -1,6 +1,7 @@
 NYC Taxi Analytics Pipeline
 
-**Streamlit App Link**
+**Streamlit App Link**:
+
 NYC-Taxi-Analytics-Pipeline-lygml4pfy63ezzfxmragqi.streamlit.app
 
 **Project Overview:**
