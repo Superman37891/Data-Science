@@ -3,23 +3,25 @@ NYC Taxi Analytics Pipeline
 **Streamlit App Link**
 NYC-Taxi-Analytics-Pipeline-lygml4pfy63ezzfxmragqi.streamlit.app
 
-**Project Overview**
+**Project Overview:**
+
 This project is an end-to-end data engineering pipeline that ingests, cleans, and analyzes NYC Yellow Taxi trip data. Using AWS services and modern data stack tools, this project demonstrates the ability to handle millions of rows, optimize storage costs, and deliver actionable business insights via an interactive dashboard.
 
 **Tech Stack**
+
 * Cloud: AWS (S3, Athena)
 * Language: Python (Pandas, PyArrow, boto3)
 * SQL: Presto/Trino (via Amazon Athena)
 * Dashboard: Streamlit
 
 **Architecture**
+
 * Storage: Amazon S3 (Free Tier, Raw and Processed Data)
 * Processing: Python (Pandas/PyArrow) + AWS SDK (boto3)
 * Analysis: AWS Athena
 * Query Engine: Amazon Athena (Serverless SQL)
 
 **Visualization: Streamlit**
-
 
 **Key Engineering Decisions**
 
@@ -35,6 +37,7 @@ Created a function to document issues in data quality and combat them. At the sa
 * Calculated Fields: To save on query-time compute costs, I added fields like trip_duration_min and speed_mph directly into the processed Parquet files. This gave me more control over the processed files and allowed me to avoid bottlenecks with using visual and paid interfaces like those on AWS to do the job for me.
 
 **Key Analytical Insights**
+
 All the queries can be found in my src/analytics/queries.py file
 
 The top 5 months for total revenue are as follows:
@@ -66,11 +69,14 @@ The average fare was $19.66 when paying with credit card versus $17.95 when payi
 This highlights a real data quality issue where manual entry or system errors create outliers that do not exist, unlike the automated credit card segment
 
 **Analytics Highlights**
+
 The dashboard answers critical business questions for stakeholders:
 
 Monthly Revenue
 Monthly Trips
 Monthly Average Fare
+Average Distance by Payment Method
+Average Fare by Payment Method
 
 **How to Run**
 Python 3.11

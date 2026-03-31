@@ -81,14 +81,14 @@ st.subheader("Overview")
 
 col1, col2, col3 = st.columns(3)
 
-col1.metric("Total Revenue", f"${df['total_revenue'].sum():,.2f}")
+col1.metric("Total Revenue (USD)", f"${df['total_revenue'].sum():,.2f}")
 col2.metric("Total Trips", f"{df['total_trips'].sum():,}")
-col3.metric("Avg Revenue / Trip", f"${df['avg_fare'].mean():.2f}")
+col3.metric("Avg Revenue (USD) / Trip", f"${df['avg_fare'].mean():.2f}")
 
 # ========================
 # REVENUE TRENDS
 # ========================
-st.subheader("Monthly Revenue Trends")
+st.subheader("Monthly Revenue (USD) Trends")
 
 # Prepare a tidy dataframe for Streamlit
 chart_data = df.set_index("month_date")[["total_revenue", "cumulative_revenue"]]
@@ -105,23 +105,23 @@ st.bar_chart(df.set_index("month_date")["total_trips"])
 # ========================
 # Avg Fare
 # ========================
-st.subheader("Monthly Avg Revenue per Trip")
+st.subheader("Monthly Avg Revenue (USD) per Trip")
 st.bar_chart(df.set_index("month_date")["avg_fare"])
 
 # ===============
 # Avg Speed by Hour
 df_speed = run_query(queries.AVG_SPEED_HOURLY_QUERY)
-st.subheader("Hourly Avg Speed")
+st.subheader("Hourly Avg Speed (MPH)")
 st.line_chart(df_speed.set_index("hour_of_day")["avg_speed_mph"])
 # ===============
 
 # =================
 # Avg Distance and Fare by Payment Type
 df_payment_type = run_query(queries.PAYMENT_METHOD_STATS_QUERY)
-st.subheader("Avg Distance By Payment Method")
+st.subheader("Avg Distance (Miles) By Payment Method")
 st.bar_chart(df_payment_type.set_index("payment_method")["avg_distance"])
 
-st.subheader("Avg Fare By Payment Method")
+st.subheader("Avg Fare (USD) By Payment Method")
 st.bar_chart(df_payment_type.set_index("payment_method")["avg_fare"])
 # =================
 

@@ -180,8 +180,6 @@ AVG_SPEED_HOURLY_QUERY = f"""
 SELECT 
     EXTRACT(HOUR FROM tpep_pickup_datetime) AS hour_of_day,
     COUNT(*) AS total_trips,
-    -- Distance is in miles, duration is in minutes. 
-    -- Convert minutes to hours (min / 60) to get MPH.
     ROUND(AVG(trip_distance / (NULLIF(trip_duration_min, 0) / 60.0)), 2) AS avg_speed_mph
 FROM {config.TABLE_NAME}
 GROUP BY 1
