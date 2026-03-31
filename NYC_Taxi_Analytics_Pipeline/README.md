@@ -76,7 +76,7 @@ Pip install streamlit, pandas, numpy, matplotlib, pyathena, python-dotenv, boto3
 * Step 2: Put the data into the data/raw folder
 * Step 3: Run the upload_to_s3.py script from the root directory via "python -m src.data_ingestion.upload_to_s3". This will upload the raw data to S3
 * Step 4: Run the process_taxi_data.py script from the root directory via "python -m src.etl.process_taxi_data". This will upload the processed data to S3
-* Step 5: Create a database in AWS Athena and create the yellow_taxi_processed table with the YELLOW_TAXI_PROCESSED_QUERY from queries.py (run in Athena)
+* Step 5: Create a database in AWS Athena and create the yellow_taxi_processed table with the YELLOW_TAXI_PROCESSED_QUERY from queries.py (run in Athena **WITH THE ACTUAL TABLE NAME replacing "{config.BUCKET_NAME}"**)
 * Step 6: Run "MSCK REPAIR TABLE yellow_taxi_processed" so that Athena can find the partitions from our year=/month= folder structure
 * Step 7: Create the yellow_taxi_enriched view via the YELLOW_TAXI_ENRICHED_QUERY in queries.py
 * Step 8: Create the KPIs via the "KPI_...QUERY" queries in the queries.py file
