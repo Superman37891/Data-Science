@@ -14,6 +14,18 @@ s3 = boto3.client("s3")
 RAW_PREFIX = f"{config.RAW_FOLDER}/"
 PROCESSED_PREFIX = f"{config.PROCESSED_FOLDER}/"
 
+MIN_EXPECTED_COLUMNS = \
+    ["VendorID",
+     "tpep_pickup_datetime",
+     "tpep_dropoff_datetime",
+     "passenger_count",
+     "trip_distance",
+     "PULocationID",
+     "DOLocationID",
+     "fare_amount",
+     "extra",
+     "payment_type",
+]
 
 def read_parquet_from_s3(key):
     obj = s3.get_object(Bucket=BUCKET_NAME, Key=key)
@@ -36,6 +48,14 @@ def log_quality(key, issues):
     for k, v in issues.items():
         print(f"{k}: {v}")
 
+def validate_schema(df):
+    missing_columns = [col for col in MIN_EXPECTED_COLUMNS if col not in df.columns]
+    if missing_columns:
+        print(f"Missing columns: {missing_columns}")
+        raise ValueError()
+    else:
+        print("Minimal schema requirements matched. Schema is valid.")
+
 def delete_s3_prefix(bucket, prefix):
     paginator = s3.get_paginator("list_objects_v2")
 
@@ -49,6 +69,11 @@ def delete_s3_prefix(bucket, prefix):
             )
 
 def transform(df):
+    """
+    We only call this after the schema
+    is validated in the main method
+    """
+
     issues = {}
 
     df["tpep_pickup_datetime"] = pd.to_datetime(df["tpep_pickup_datetime"])
@@ -56,16 +81,16 @@ def transform(df):
 
     ## null values
     issues["null_rows"] = df.isnull().any(axis=1).sum()
-    df = df.dropna()
+    df = df.dropna().copy()
 
     # duration
     df["trip_duration_min"] = (df["tpep_dropoff_datetime"] - df["tpep_pickup_datetime"]).dt.total_seconds() / 60.0
     issues["non_positive_duration"] = (df["trip_duration_min"] <= 0).sum()
-    df = df[df["trip_duration_min"] > 0]
+    df = df[df["trip_duration_min"] > 0].copy()
 
     # distance
     issues["non_positive_distance"] = (df["trip_distance"] <= 0).sum()
-    df = df[df["trip_distance"] > 0]
+    df = df[df["trip_distance"] > 0].copy()
 
     # payment type
     issues["bad_payment_type"] = (
@@ -79,7 +104,7 @@ def transform(df):
     # handle infinities safely
     inf_count = (~np.isfinite(df["speed_mph"])).sum()
     issues["infinite_speed"] = inf_count
-    df = df[np.isfinite(df["speed_mph"])]
+    df = df[np.isfinite(df["speed_mph"])].copy()
 
     # float casting
     df = df.astype({
@@ -94,19 +119,15 @@ def transform(df):
 
 
 def get_s3_keys(prefix):
-    response = s3.list_objects_v2(
-        Bucket=BUCKET_NAME,
-        Prefix=prefix
-    )
+    paginator = s3.get_paginator("list_objects_v2")
 
+    keys = []
+    for page in paginator.paginate(Bucket=BUCKET_NAME, Prefix=prefix):
+        keys.extend(obj["Key"] for obj in page.get("Contents", []))
 
-    return [obj["Key"] for obj in response.get("Contents", [])]
-
+    return keys
 
 def main():
-    import boto3
-
-    s3 = boto3.client("s3")
 
     detect_duplicates = True
 
@@ -121,8 +142,11 @@ def main():
     # 2. GET ALL PROCESSED KEYS ONCE (FAST)
     # =========================
     processed_keys = set(get_s3_keys(prefix=PROCESSED_PREFIX))
+    processed_files = {
+    key.split("/")[-1] for key in processed_keys
+    }
 
-    print(f"Found {len(processed_keys)} processed files")
+    print(f"Found {len(processed_files)} processed files")
 
     # =========================
     # 3. PROCESS ONLY NEW FILES
@@ -130,8 +154,7 @@ def main():
     for key in raw_keys:
 
         file_name = key.split("/")[-1]
-
-        if detect_duplicates and key in processed_keys:
+        if detect_duplicates and file_name in processed_files:
             print(f"Skipping because already processed: {file_name}")
             continue
 
@@ -141,6 +164,11 @@ def main():
         # Load + transform
         # -------------------------
         df = read_parquet_from_s3(key)
+        # Check if minimal schema requirements are present
+        try:
+            validate_schema(df)
+        except ValueError as e:
+            continue
         df, issues = transform(df)
         log_quality(key=key, issues=issues)
 
@@ -163,7 +191,6 @@ def main():
         write_parquet_to_s3(df, processed_key)
 
         print(f"Saved: {processed_key}")
-        print("OUTPUT FILES:")
 
 if __name__ == "__main__":
     main()
