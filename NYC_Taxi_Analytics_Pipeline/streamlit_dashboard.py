@@ -23,56 +23,63 @@ connection = connect(
 def run_query(query):
     return pd.read_sql(query, connection)
 
-# ========================
-# 📋 Preview Query (CACHED)
-# ========================
+# ==============
+# Download Functions
 @st.cache_data(ttl=3600)
-def load_preview(year):
+def load_full_year(year):
     query = f"""
     SELECT *
     FROM {config.ENRICHED_TABLE_NAME}
     WHERE year = {year}
-    LIMIT 100
     """
     return pd.read_sql(query, connection)
 
 # ========================
-# 🎛️ Sidebar Filters
+# 🎛Sidebar Filters
 # ========================
 st.sidebar.header("Filters")
 
 year_selected = st.sidebar.selectbox("Select Year", [2025, 2026])
 
-# =========================
-# Single Query to Create DF
-# =========================
-MAIN_QUERY = f"""
-SELECT 
-    month_date, 
-    COUNT(*) AS total_trips, 
-    AVG(speed_mph) AS avg_speed_mph,
-    AVG(fare_amount) AS avg_fare, 
-    SUM(fare_amount) AS total_revenue
-FROM {config.ENRICHED_TABLE_NAME}
-WHERE year = {year_selected}
-GROUP BY month_date
-ORDER BY month_date
-"""
-
-df = run_query(MAIN_QUERY)
+df = load_full_year(year_selected)
 
 # ===================
 # Derived Metrics
 # ===================
+
 df["month_date"] = pd.to_datetime(df["month_date"])
+df["month_num"] = df["month_date"].dt.month
+# this may have a compiler warning of unexpected type (str, property), but this is because type checkers don't know the exact typing of the data
+# the month value (a categorical string key in the Athena dataset) as an int
+
 df = df.sort_values("month_date")
 
 df["cumulative_revenue"] = df["total_revenue"].cumsum()
+
+# ==========
+# Indexed DFs for reusability
+
+monthly_df = df.groupby("month_date").agg(
+    total_trips=("trip_distance", "count"),
+    avg_distance=("trip_distance", "mean"),
+    avg_speed_mph=("speed_mph", "mean"),
+    avg_fare=("fare_amount", "mean"),
+    total_revenue=("fare_amount", "sum")
+).reset_index()
+
+payment_df = df.groupby("payment_method").agg(
+    total_trips=("trip_distance", "count"),
+    avg_distance=("trip_distance", "mean"),
+    avg_speed_mph=("speed_mph", "mean"),
+    avg_fare=("fare_amount", "mean"),
+    total_revenue=("fare_amount", "sum")
+).reset_index()
 
 # =================
 # Streamlit Title
 # =================
 st.title("NYC Taxi Analytics Dashboard")
+st.caption("Interactive dashboard analyzing NYC taxi revenue, trips, fares, and rider behavior.")
 
 # ========================
 # KPI SUMMARY
@@ -81,54 +88,118 @@ st.subheader("Overview")
 
 col1, col2, col3 = st.columns(3)
 
-col1.metric("Total Revenue (USD)", f"${df['total_revenue'].sum():,.2f}")
+# Make the revenue fit on the screen
+total_revenue = df["total_revenue"].sum()
+if total_revenue >= 1_000_000_000:
+    revenue_display = f"${total_revenue/1_000_000_000:.3f}B"
+elif total_revenue >= 1_000_000:
+    revenue_display = f"${total_revenue/1_000_000:.3f}M"
+elif total_revenue >= 1_000:
+    revenue_display = f"${total_revenue/1_000:.3f}K"
+else:
+    revenue_display = f"${total_revenue:.3f}"
+
+col1.metric("Total Revenue (USD)", revenue_display)
 col2.metric("Total Trips", f"{df['total_trips'].sum():,}")
 col3.metric("Avg Revenue (USD) / Trip", f"${df['avg_fare'].mean():.2f}")
 
 # ========================
 # REVENUE TRENDS
 # ========================
-st.subheader("Monthly Revenue (USD) Trends")
 
-# Prepare a tidy dataframe for Streamlit
-chart_data = df.set_index("month_date")[["total_revenue", "cumulative_revenue"]]
+# Monthly Total Revenue
+st.subheader("Monthly Total Revenue (USD)")
+st.caption("X-axis: Month | Y-Axis: Total Monthly Revenue (USD)")
+st.bar_chart(monthly_df["total_revenue"])
 
-# This handles the x-axis spacing and formatting automatically
-st.bar_chart(chart_data)
+# Monthly Cumulative Revenue
+st.subheader("Monthly Cumulative Revenue (USD)")
+st.caption("X-axis: Month | Y-Axis: Monthly Cumulative Revenue (USD)")
+st.bar_chart(monthly_df["cumulative_revenue"])
 
-# ========================
-# Trips
-# ========================
+# Monthly Trips
 st.subheader("Monthly Trips")
-st.bar_chart(df.set_index("month_date")["total_trips"])
+st.caption("X-axis: Month | Y-axis: Monthly Trips")
+st.bar_chart(monthly_df["total_trips"])
 
-# ========================
-# Avg Fare
-# ========================
+# Monthly Avg Fare
 st.subheader("Monthly Avg Revenue (USD) per Trip")
-st.bar_chart(df.set_index("month_date")["avg_fare"])
+st.caption("X-axis: Month | Y-axis: Monthly Avg Revenue (USD) per Trip")
+st.bar_chart(monthly_df["avg_fare"])
 
-# ===============
 # Avg Speed by Hour
 df_speed = run_query(queries.AVG_SPEED_HOURLY_QUERY)
 st.subheader("Hourly Avg Speed (MPH)")
+st.caption("X-axis: Hour of Day | Y-axis: Avg Speed (MPH)")
 st.line_chart(df_speed.set_index("hour_of_day")["avg_speed_mph"])
-# ===============
 
-# =================
-# Avg Distance and Fare by Payment Type
-df_payment_type = run_query(queries.PAYMENT_METHOD_STATS_QUERY)
-st.subheader("Avg Distance (Miles) By Payment Method")
-st.bar_chart(df_payment_type.set_index("payment_method")["avg_distance"])
+# ==============================
+# Stats by payment type
+# ==============================
 
-st.subheader("Avg Fare (USD) By Payment Method")
-st.bar_chart(df_payment_type.set_index("payment_method")["avg_fare"])
-# =================
+# Count of Trips by Payment Type
+st.subheader("Number of trips by Payment Method")
+st.caption("X-axis: Payment Method | Y-axis: Number of trips by Payment Method")
+st.table(payment_df["total_trips"])
+
+# Avg Distance by Payment Type
+st.subheader("Avg Distance (Miles) by Payment Method")
+st.caption("X-axis: Payment Method | Y-axis: Avg Distance (Miles) by Payment Method")
+st.bar_chart(payment_df["avg_distance"])
+
+# Avg Fare by Payment Type
+st.subheader("Avg Fare (USD) by Payment Method")
+st.caption("X-axis: Payment Method | Y-axis: Avg Fare (USD) by Payment Method")
+st.bar_chart(payment_df["avg_fare"])
+
+# Standard Deviation of Fare by Payment Type
+st.subheader("Standard Deviation of Fare (USD) by Payment Method")
+st.caption("X-axis: Payment Method | Y-axis: Fare Standard Deviation (USD) by Payment Method")
+st.bar_chart(payment_df["fare_standard_deviation"])
 
 # =============
 # Data Preview
 # =============
 st.subheader("🔍 Data Preview")
 
-df_preview = load_preview(year_selected)
+df_preview = df.head(100)
 st.dataframe(df_preview)
+
+
+preview_csv = df_preview.to_csv(index=False).encode("utf-8")
+st.caption("Download the Preview as a CSV")
+st.download_button(
+    label="Download Preview Data as CSV",
+    data=preview_csv,
+    file_name=f"nyc_taxi_preview_{year_selected}.csv",
+    mime="text/csv"
+)
+
+# Yearly download
+st.subheader("Yearly Data Download")
+st.caption("WARNING: *VERY* Big File. Download the Full Year as a CSV.")
+
+if st.button("Download Yearly Data"):
+    yearly_data = df
+    st.download_button(
+        label=f"Download {year_selected} Data as CSV",
+        data=yearly_data.to_csv(index=False).encode("utf-8"),
+        file_name=f"nyc_taxi_year_{year_selected}.csv",
+        mime="text/csv"
+    )
+
+# Monthly data download
+st.subheader("📥 Download Data by Month")
+
+month_selected = st.number_input("Month", min_value=1, max_value=12, step=1)
+
+if st.button("Download Monthly Data"):
+
+    selected_month_df = df[df["month_num" == month_selected]]
+    st.caption(f"WARNING: Big File. Download Data for Selected Month and Year")
+    st.download_button(
+        label=f"Download {year_selected}_{month_selected} Data as CSV",
+        data=selected_month_df.to_csv(index=False).encode("utf-8"),
+        file_name=f"nyc_taxi_{year_selected}/{month_selected:02d}.csv",
+        mime="text/csv"
+    )
