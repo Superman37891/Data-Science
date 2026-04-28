@@ -20,7 +20,6 @@ connection = connect(
     schema_name=config.DATABASE
 )
 
-@st.cache_data(ttl=3600)
 def run_query(query):
     return pd.read_sql(query, connection)
 
