@@ -64,20 +64,15 @@ df["cumulative_revenue"] = df["total_revenue"].cumsum()
 # ==========
 # Indexed DFs for reusability
 
-monthly_df = df.groupby("month_date").agg(
-    total_trips=("trip_distance", "count"),
-    avg_distance=("trip_distance", "mean"),
-    avg_speed_mph=("speed_mph", "mean"),
-    avg_fare=("fare_amount", "mean"),
-    total_revenue=("fare_amount", "sum")
-).reset_index()
+# Note that our df is already grouped by month_date, so no need for a separate monthly-indexed DF
 
 payment_df = df.groupby("payment_method").agg(
     total_trips=("trip_distance", "count"),
     avg_distance=("trip_distance", "mean"),
     avg_speed_mph=("speed_mph", "mean"),
     avg_fare=("fare_amount", "mean"),
-    total_revenue=("fare_amount", "sum")
+    total_revenue=("fare_amount", "sum")    ,
+    fare_standard_deviation = ("fare_amount", "std")
 ).reset_index()
 
 # =================
@@ -112,25 +107,28 @@ col3.metric("Avg Revenue (USD) / Trip", f"${df['avg_fare'].mean():.2f}")
 # REVENUE TRENDS
 # ========================
 
+# Note that, since our df is already grouped by month_date, we don't need to
+# make a separate df grouped by month
+
 # Monthly Total Revenue
 st.subheader("Monthly Total Revenue (USD)")
 st.caption("X-axis: Month | Y-Axis: Total Monthly Revenue (USD)")
-st.bar_chart(monthly_df["total_revenue"])
+st.bar_chart(df["total_revenue"])
 
 # Monthly Cumulative Revenue
 st.subheader("Monthly Cumulative Revenue (USD)")
 st.caption("X-axis: Month | Y-Axis: Monthly Cumulative Revenue (USD)")
-st.bar_chart(monthly_df["cumulative_revenue"])
+st.bar_chart(df["cumulative_revenue"])
 
 # Monthly Trips
 st.subheader("Monthly Trips")
 st.caption("X-axis: Month | Y-axis: Monthly Trips")
-st.bar_chart(monthly_df["total_trips"])
+st.bar_chart(df["total_trips"])
 
 # Monthly Avg Fare
 st.subheader("Monthly Avg Revenue (USD) per Trip")
 st.caption("X-axis: Month | Y-axis: Monthly Avg Revenue (USD) per Trip")
-st.bar_chart(monthly_df["avg_fare"])
+st.bar_chart(df["avg_fare"])
 
 # Avg Speed by Hour
 df_speed = run_query(queries.AVG_SPEED_HOURLY_QUERY)
