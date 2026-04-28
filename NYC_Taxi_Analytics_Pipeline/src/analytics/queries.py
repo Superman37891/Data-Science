@@ -132,8 +132,6 @@ SELECT
     	WHEN payment_type = 6 THEN 'Voided trip'
         ELSE 'Other'
     END AS payment_method,
-    month, 
-    year, 
     COUNT(*) AS total_trips, 
     SUM(fare_amount) AS total_revenue, 
     AVG(fare_amount) AS avg_fare, 
@@ -141,7 +139,7 @@ SELECT
     AVG(speed_mph) AS avg_speed_mph
 FROM
   yellow_taxi_enriched
-GROUP BY payment_type, month, year
+GROUP BY payment_type
 """
 # Get the stats of trips by different payment methods
 PAYMENT_METHOD_STATS_QUERY = f"""
