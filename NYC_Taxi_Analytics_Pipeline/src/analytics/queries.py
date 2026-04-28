@@ -49,7 +49,7 @@ SELECT
         ),
         '%Y-%m-%d'
     ) AS month_date
-FROM {config.TABLE_NAME};
+FROM yellow_taxi_processed;
 """
 
 
@@ -114,7 +114,7 @@ SELECT
     EXTRACT(HOUR FROM tpep_pickup_datetime) AS hour_of_day,
     COUNT(*) AS total_trips,
     ROUND(AVG(trip_distance / (NULLIF(trip_duration_min, 0) / 60.0)), 2) AS avg_speed_mph
-FROM {config.TABLE_NAME}
+FROM yellow_taxi_processed
 GROUP BY 1
 ORDER BY hour_of_day;
 """
@@ -136,7 +136,7 @@ SELECT
     ROUND(AVG(trip_distance), 2) AS avg_distance,
     ROUND(AVG(fare_amount), 2) AS avg_fare,
     ROUND(STDDEV(fare_amount), 2) AS fare_standard_deviation
-FROM {config.TABLE_NAME}
+FROM yellow_taxi_processed
 GROUP BY payment_type
 ORDER BY payment_type
 """
@@ -160,7 +160,7 @@ SELECT
     AVG(fare_amount) AS avg_fare,
     STDDEV(fare_amount) AS stdev_fare,
     COUNT(*) AS trip_count
-FROM {config.TABLE_NAME}
+FROM yellow_taxi_processed
 GROUP BY 1
 ORDER BY 1
 """
