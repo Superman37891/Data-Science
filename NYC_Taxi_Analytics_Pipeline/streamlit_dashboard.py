@@ -35,6 +35,7 @@ year_selected = st.sidebar.selectbox("Select Year", [2025, 2026])
 # Create dataframes through Athena queries
 monthly_df = run_query(queries.KPI_MONTHLY_SUMMARY_QUERY)
 payment_df = run_query(queries.PAYMENT_METHOD_STATS_QUERY)
+payment_df = payment_df.set_index("payment_method")
 hourly_df = run_query(queries.HOURLY_TRIPS_QUERY)
 # ===================
 # Derived Metrics
@@ -118,22 +119,22 @@ st.line_chart(hourly_df.set_index("hour_of_day")["avg_speed_mph"])
 
 # Count of Trips by Payment Type
 st.subheader("Number of trips by Payment Method")
-st.table(payment_df.reset_index()[["payment_method", "total_trips"]])
+st.table(payment_df[["total_trips"]])
 
 # Avg Distance by Payment Type
 st.subheader("Avg Distance (Miles) by Payment Method")
 st.caption("X-axis: Payment Method | Y-axis: Avg Distance (Miles) by Payment Method")
-st.bar_chart(payment_df.reset_index()["avg_distance"])
+st.bar_chart(payment_df[["avg_distance"]])
 
 # Avg Fare by Payment Type
 st.subheader("Avg Fare (USD) by Payment Method")
 st.caption("X-axis: Payment Method | Y-axis: Avg Fare (USD) by Payment Method")
-st.bar_chart(payment_df.reset_index()["avg_fare"])
+st.bar_chart(payment_df[["avg_fare"]])
 
 # Standard Deviation of Fare by Payment Type
 st.subheader("Standard Deviation of Fare (USD) by Payment Method")
 st.caption("X-axis: Payment Method | Y-axis: Fare Standard Deviation (USD) by Payment Method")
-st.bar_chart(payment_df.reset_index()["stdev_fare"])
+st.bar_chart(payment_df[["stdev_fare"]])
 
 # =============
 # Data Preview
