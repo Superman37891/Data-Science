@@ -23,16 +23,6 @@ connection = connect(
 def run_query(query):
     return pd.read_sql(query, connection)
 
-# ==============
-# Download Functions
-@st.cache_data(ttl=3600)
-def load_full_year(year):
-    query = f"""
-    SELECT *
-    FROM {config.ENRICHED_TABLE_NAME}
-    WHERE year = {year}
-    """
-    return pd.read_sql(query, connection)
 
 # ========================
 # 🎛Sidebar Filters
@@ -41,7 +31,22 @@ st.sidebar.header("Filters")
 
 year_selected = st.sidebar.selectbox("Select Year", [2025, 2026])
 
-df = load_full_year(year_selected)
+# Run the query once through Athena
+# To utilize drastic speed increase with Partition Projection
+MAIN_QUERY = f"""
+SELECT 
+    month_date, 
+    COUNT(*) AS total_trips, 
+    AVG(speed_mph) AS avg_speed_mph,
+    AVG(fare_amount) AS avg_fare, 
+    SUM(fare_amount) AS total_revenue
+FROM {config.ENRICHED_TABLE_NAME}
+WHERE year = {year_selected}
+GROUP BY month_date
+ORDER BY month_date
+"""
+
+df = run_query(MAIN_QUERY)
 
 # ===================
 # Derived Metrics
