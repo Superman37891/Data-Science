@@ -47,11 +47,7 @@ WHERE year = {year_selected}
 
 monthly_df = run_query(queries.KPI_MONTHLY_SUMMARY_QUERY)
 payment_df = run_query(queries.PAYMENT_METHOD_STATS_QUERY)
-payment_df = payment_df.set_index("payment_method")
 hourly_df = run_query(queries.HOURLY_TRIPS_QUERY)
-
-st.write(payment_df.columns)
-st.cache_data.clear()
 # ===================
 # Derived Metrics
 # ===================
