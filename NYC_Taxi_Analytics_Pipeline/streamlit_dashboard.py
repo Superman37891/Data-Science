@@ -20,6 +20,7 @@ connection = connect(
     schema_name=config.DATABASE
 )
 
+@st.cache_data(ttl=3600)
 def run_query(query):
     return pd.read_sql(query, connection)
 
@@ -49,6 +50,8 @@ payment_df = run_query(queries.PAYMENT_METHOD_STATS_QUERY)
 payment_df = payment_df.set_index("payment_method")
 hourly_df = run_query(queries.HOURLY_TRIPS_QUERY)
 
+st.write(payment_df.columns)
+st.cache_data.clear()
 # ===================
 # Derived Metrics
 # ===================
