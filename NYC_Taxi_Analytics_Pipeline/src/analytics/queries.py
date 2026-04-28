@@ -135,6 +135,7 @@ SELECT
     COUNT(*) AS total_trips, 
     SUM(fare_amount) AS total_revenue, 
     AVG(fare_amount) AS avg_fare, 
+    STDDEV(fare_amount) AS stdev_fare,
     AVG(trip_distance) AS avg_distance, 
     AVG(speed_mph) AS avg_speed_mph
 FROM

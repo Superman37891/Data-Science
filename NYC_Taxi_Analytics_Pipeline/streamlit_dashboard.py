@@ -46,6 +46,7 @@ WHERE year = {year_selected}
 
 monthly_df = run_query(queries.KPI_MONTHLY_SUMMARY_QUERY)
 payment_df = run_query(queries.PAYMENT_METHOD_STATS_QUERY)
+payment_df = payment_df.groupby("payment_method")
 hourly_df = run_query(queries.HOURLY_TRIPS_QUERY)
 
 # ===================
@@ -145,7 +146,7 @@ st.bar_chart(payment_df["avg_fare"])
 # Standard Deviation of Fare by Payment Type
 st.subheader("Standard Deviation of Fare (USD) by Payment Method")
 st.caption("X-axis: Payment Method | Y-axis: Fare Standard Deviation (USD) by Payment Method")
-st.bar_chart(payment_df["fare_standard_deviation"])
+st.bar_chart(payment_df["stdev_fare"])
 
 # =============
 # Data Preview
