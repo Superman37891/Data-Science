@@ -37,7 +37,7 @@ TBLPROPERTIES (
 
 # Create a view adding a month_date column
 # to help with dates visualization software
-YELLOW_TAXI_ENRICHED_QUERY = f"""
+YELLOW_TAXI_ENRICHED_CREATE_QUERY = f"""
 CREATE OR REPLACE VIEW yellow_taxi_enriched AS
 SELECT
     *,
@@ -52,102 +52,35 @@ SELECT
 FROM {config.TABLE_NAME};
 """
 
-# Create a KPI for monthly revenue to help
-# plot on BI software and to help
-# other queries get monthly revenue quickly
-KPI_MONTHLY_REVENUE_QUERY = f"""
-CREATE OR REPLACE VIEW taxi_data.kpi_monthly_revenue AS
-SELECT
-  year, 
-  month,
-  month_date,
-  CAST(SUM(fare_amount) AS DECIMAL(18, 2)) AS total_revenue
-FROM
-  {config.ENRICHED_TABLE_NAME}
-GROUP BY year, month, month_date
-"""
 
-# Create a KPI for num. trips per month to help
-# plot on BI software and to help
-# other queries get monthly trips quickly
-KPI_MONTHLY_TRIPS_QUERY = f"""
-CREATE OR REPLACE VIEW taxi_data.kpi_monthly_trips AS
-SELECT
-  year,
-  month,
-  month_date,
-  COUNT(*) total_trips
-FROM
-  {config.ENRICHED_TABLE_NAME}
-GROUP BY year, month, month_date
-"""
-
-# Create a KPI for cumulative revenue to help
-# plot on BI software and to help
-# other queries get cumulative revenue quickly
-KPI_CUMULATIVE_REVENUE_QUERY = """
-CREATE OR REPLACE VIEW taxi_data.kpi_cumulative_revenue AS
-SELECT
-  month_date,
-  SUM(total_revenue) OVER (ORDER BY month_date ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) cumulative_revenue
-FROM
-  kpi_monthly_revenue
-
-"""
-
-# Create a KPI for monthly avg fare to help
-# plot on BI software and to help
-# other queries get monthly avg fare quickly
-KPI_MONTHLY_AVG_FARE_QUERY = f"""
-CREATE OR REPLACE VIEW taxi_data.kpi_monthly_avg_fare AS
-SELECT
-  year,
-  month,
-  month_date,
-  ROUND((SUM(fare_amount) / COUNT(*)), 2) avg_fare
-FROM
-  {config.ENRICHED_TABLE_NAME}
-GROUP BY year, month, month_date
-"""
-
-# Create a KPI for monthly avg speed to help
-# plot on BI software and to help
-# other queries get monthly avg speed quickly
-KPI_MONTHLY_AVG_SPEED_QUERY = f"""
-CREATE OR REPLACE VIEW taxi_data.kpi_monthly_avg_speed AS
+KPI_MONTHLY_SUMMARY_CREATE_QUERY = f"""
+CREATE OR REPLACE VIEW taxi_data.kpi_monthly_summary AS
 SELECT
   year, 
   month, 
-  month_date, 
-  ROUND(AVG(speed_mph), 3) avg_speed
+  month_date,
+  COUNT(*) total_trips,
+  SUM(fare_amount) total_revenue,
+  AVG(fare_amount) avg_fare,
+  AVG(trip_distance) avg_distance,
+  AVG(speed_mph) avg_speed_mph,
+  SUM(SUM(fare_amount)) OVER (ORDER BY month_date ASC) cumulative_revenue
 FROM
-  {config.ENRICHED_TABLE_NAME}
+  yellow_taxi_enriched
 GROUP BY year, month, month_date
 """
-
 # Create a KPI for monthly summary
 # to help plot on BI software
 # and to help with other queries
 # that want multiple monthly statistics
 KPI_MONTHLY_SUMMARY_QUERY = f"""
-CREATE OR REPLACE VIEW taxi_data.kpi_monthly_summary AS
-SELECT
-  year, 
-  month, 
-  month_date, 
-  COUNT(*) total_trips, 
-  SUM(fare_amount) total_revenue, 
-  AVG(trip_distance) avg_distance, 
-  AVG(speed_mph) avg_speed
-FROM
-  {config.ENRICHED_TABLE_NAME}
-GROUP BY year, month, month_date
+SELECT * FROM taxi_data.kpi_monthly_summary
 """
 
 # Get the top 5 months by revenue
 TOP_5_REVENUE_MONTHS_QUERY = """
 SELECT year, month, total_revenue
-FROM kpi_monthly_revenue
+FROM kpi_monthly_summary
 ORDER BY total_revenue DESC
 LIMIT 5
 """
@@ -176,7 +109,7 @@ ORDER BY month_date;
 
 # Get the avg speed per hour of the day
 # to help identify when traffic gridlock happens
-AVG_SPEED_HOURLY_QUERY = f"""
+HOURLY_TRIPS_QUERY = f"""
 SELECT 
     EXTRACT(HOUR FROM tpep_pickup_datetime) AS hour_of_day,
     COUNT(*) AS total_trips,
@@ -234,31 +167,31 @@ ORDER BY 1
 
 MONTHLY_TRIPS_QUERY = """
 SELECT month_date, total_trips
-FROM kpi_monthly_trips
+FROM kpi_monthly_summary
 ORDER BY month_date
 """
 
 MONTHLY_AVG_SPEED_QUERY = """
-SELECT month_date, avg_speed
-FROM kpi_monthly_avg_speed
+SELECT month_date, avg_speed_mph
+FROM kpi_monthly_summary
 ORDER BY month_date
 """
 
 MONTHLY_AVG_FARE_QUERY = """
 SELECT month_date, avg_fare
-FROM kpi_monthly_avg_fare
+FROM kpi_monthly_summary
 ORDER BY month_date
 """
 
 MONTHLY_REVENUE_QUERY = """
-SELECT month_date, revenue
-FROM kpi_monthly_revenue
+SELECT month_date, total_revenue
+FROM kpi_monthly_summary
 ORDER BY month_date
 """
 
-CUMULATIVE_REVENUE_QUERY = """
+MONTHLY_CUMULATIVE_REVENUE_QUERY = """
 SELECT month_date, cumulative_revenue
-FROM kpi_cumulative_revenue
+FROM kpi_monthly_summary
 ORDER BY month_date
 """
 
