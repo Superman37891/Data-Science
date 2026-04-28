@@ -134,11 +134,11 @@ SELECT
     END AS payment_method,
     month, 
     year, 
-    COUNT(*) total_trips, 
-    SUM(fare_amount) total_revenue, 
-    AVG(fare_amount) avg_fare, 
-    AVG(trip_distance) avg_distance, 
-    AVG(speed_mph) avg_speed_mph
+    COUNT(*) AS total_trips, 
+    SUM(fare_amount) AS total_revenue, 
+    AVG(fare_amount) AS avg_fare, 
+    AVG(trip_distance) AS avg_distance, 
+    AVG(speed_mph) AS avg_speed_mph
 FROM
   yellow_taxi_enriched
 GROUP BY payment_type, month, year
