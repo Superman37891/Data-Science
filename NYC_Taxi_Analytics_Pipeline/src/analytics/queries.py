@@ -123,24 +123,36 @@ CREATE_KPI_PAYMENT_TYPE_SUMMARY_QUERY = f"""
 CREATE OR REPLACE VIEW taxi_data.kpi_payment_type_summary AS
 SELECT
     CASE 
-    	WHEN payment_type = 0 THEN 'Flex Fare Trip'
+        WHEN payment_type = 0 THEN 'Flex Fare Trip'
         WHEN payment_type = 1 THEN 'Credit Card'
         WHEN payment_type = 2 THEN 'Cash'
-    	WHEN payment_type = 3 THEN 'No Charge'
-    	WHEN payment_type = 4 THEN 'Dispute'
-    	WHEN payment_type = 5 THEN 'Unknown'
-    	WHEN payment_type = 6 THEN 'Voided trip'
+        WHEN payment_type = 3 THEN 'No Charge'
+        WHEN payment_type = 4 THEN 'Dispute'
+        WHEN payment_type = 5 THEN 'Unknown'
+        WHEN payment_type = 6 THEN 'Voided trip'
         ELSE 'Other'
     END AS payment_method,
-    COUNT(*) AS total_trips, 
-    SUM(fare_amount) AS total_revenue, 
-    AVG(fare_amount) AS avg_fare, 
+
+    COUNT(*) AS total_trips,
+    SUM(fare_amount) AS total_revenue,
+    AVG(fare_amount) AS avg_fare,
     STDDEV(fare_amount) AS stdev_fare,
-    AVG(trip_distance) AS avg_distance, 
+    AVG(trip_distance) AS avg_distance,
     AVG(speed_mph) AS avg_speed_mph
-FROM
-  yellow_taxi_enriched
-GROUP BY payment_type
+
+FROM yellow_taxi_enriched
+
+GROUP BY 
+    CASE 
+        WHEN payment_type = 0 THEN 'Flex Fare Trip'
+        WHEN payment_type = 1 THEN 'Credit Card'
+        WHEN payment_type = 2 THEN 'Cash'
+        WHEN payment_type = 3 THEN 'No Charge'
+        WHEN payment_type = 4 THEN 'Dispute'
+        WHEN payment_type = 5 THEN 'Unknown'
+        WHEN payment_type = 6 THEN 'Voided trip'
+        ELSE 'Other'
+    END
 """
 # Get the stats of trips by different payment methods
 PAYMENT_METHOD_STATS_QUERY = f"""
