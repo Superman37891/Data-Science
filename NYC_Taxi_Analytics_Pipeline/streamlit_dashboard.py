@@ -130,8 +130,7 @@ st.line_chart(hourly_df.set_index("hour_of_day")["avg_speed_mph"])
 
 # Count of Trips by Payment Type
 st.subheader("Number of trips by Payment Method")
-st.caption("X-axis: Payment Method | Y-axis: Number of trips by Payment Method")
-st.table(payment_df["total_trips"])
+st.table(payment_df["payment_type", "total_trips"])
 
 # Avg Distance by Payment Type
 st.subheader("Avg Distance (Miles) by Payment Method")

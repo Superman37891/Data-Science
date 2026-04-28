@@ -53,7 +53,7 @@ FROM yellow_taxi_processed;
 """
 
 
-KPI_MONTHLY_SUMMARY_CREATE_QUERY = f"""
+CREATE_KPI_MONTHLY_SUMMARY_QUERY = f"""
 CREATE OR REPLACE VIEW taxi_data.kpi_monthly_summary AS
 SELECT
   year, 
@@ -119,9 +119,9 @@ GROUP BY 1
 ORDER BY hour_of_day;
 """
 
-# Get the stats of trips by different payment methods
-PAYMENT_METHOD_STATS_QUERY = f"""
-SELECT 
+CREATE_KPI_PAYMENT_TYPE_SUMMARY_QUERY = f"""
+CREATE OR REPLACE VIEW taxi_data.kpi_payment_type_summary AS
+SELECT
     CASE 
     	WHEN payment_type = 0 THEN 'Flex Fare Trip'
         WHEN payment_type = 1 THEN 'Credit Card'
@@ -132,13 +132,21 @@ SELECT
     	WHEN payment_type = 6 THEN 'Voided trip'
         ELSE 'Other'
     END AS payment_method,
-    COUNT(*) AS total_trips,
-    ROUND(AVG(trip_distance), 2) AS avg_distance,
-    ROUND(AVG(fare_amount), 2) AS avg_fare,
-    ROUND(STDDEV(fare_amount), 2) AS fare_standard_deviation
-FROM yellow_taxi_processed
-GROUP BY payment_type
-ORDER BY payment_type
+    month, 
+    year, 
+    COUNT(*) total_trips, 
+    SUM(fare_amount) total_revenue, 
+    AVG(fare_amount) avg_fare, 
+    AVG(trip_distance) avg_distance, 
+    AVG(speed_mph) avg_speed_mph
+FROM
+  yellow_taxi_enriched
+GROUP BY payment_type, month, year
+"""
+# Get the stats of trips by different payment methods
+PAYMENT_METHOD_STATS_QUERY = f"""
+SELECT *
+FROM taxi_data.kpi_payment_type_summary
 """
 
 # Get specific stats of fare amounts
