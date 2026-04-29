@@ -178,7 +178,7 @@ if st.button("Download Monthly Summary Data"):
         (monthly_summary_df["year"] == year_selected)
     ]
     st.download_button(
-        label=f"Download {year_selected}_{month_selected} Summary Data as CSV",
+        label=f"Download {year_selected}_{month_selected:02d} Summary Data as CSV",
         data=selected_month_df.to_csv(index=False).encode("utf-8"),
         file_name=f"nyc_taxi_{year_selected}/{month_selected:02d}.csv",
         mime="text/csv"
