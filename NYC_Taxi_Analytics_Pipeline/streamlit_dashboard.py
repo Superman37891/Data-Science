@@ -142,7 +142,9 @@ st.bar_chart(payment_summary_df[["stdev_fare"]])
 st.subheader("Data Preview (50 rows)")
 
 preview_path = os.path.join(BASE_DIR, "preprocessed_preview_data", "nyc_taxi_preview_50.csv")
-
+st.write("BASE_DIR:", BASE_DIR)
+st.write("Preview path:", preview_path)
+st.write("Exists?", os.path.exists(preview_path))
 df_preview = pd.read_csv(preview_path)
 st.dataframe(df_preview)
 
