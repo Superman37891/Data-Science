@@ -2,8 +2,9 @@ import sys
 import os
 
 # Adds the root directory to the python path
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, BASE_DIR)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, PROJECT_ROOT)
 
 import src.analytics.queries as queries # Now this should work
 
@@ -142,9 +143,6 @@ st.bar_chart(payment_summary_df[["stdev_fare"]])
 st.subheader("Data Preview (50 rows)")
 
 preview_path = os.path.join(BASE_DIR, "preprocessed_preview_data", "nyc_taxi_preview_50.csv")
-st.write("BASE_DIR:", BASE_DIR)
-st.write("Preview path:", preview_path)
-st.write("Exists?", os.path.exists(preview_path))
 df_preview = pd.read_csv(preview_path)
 st.dataframe(df_preview)
 
@@ -175,7 +173,7 @@ st.caption("If you want the raw monthly data, get it from the NYC Taxi Dataset w
 month_selected = st.number_input("Month", min_value=1, max_value=12, step=1)
 
 if st.button("Download Monthly Summary Data"):
-    selected_month_df = monthly_summary_df[monthly_summary_df["month_num"] == month_selected and monthly_summary_df["year"] == year_selected]
+    selected_month_df = monthly_summary_df[monthly_summary_df["month_num"] == month_selected & monthly_summary_df["year"] == year_selected]
     st.download_button(
         label=f"Download {year_selected}_{month_selected} Summary Data as CSV",
         data=selected_month_df.to_csv(index=False).encode("utf-8"),
