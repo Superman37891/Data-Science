@@ -173,7 +173,10 @@ st.caption("If you want the raw monthly data, get it from the NYC Taxi Dataset w
 month_selected = st.number_input("Month", min_value=1, max_value=12, step=1)
 
 if st.button("Download Monthly Summary Data"):
-    selected_month_df = monthly_summary_df[monthly_summary_df["month_num"] == month_selected & monthly_summary_df["year"] == year_selected]
+    selected_month_df = monthly_summary_df[
+        (monthly_summary_df["month_num"] == month_selected) &
+        (monthly_summary_df["year"] == year_selected)
+    ]
     st.download_button(
         label=f"Download {year_selected}_{month_selected} Summary Data as CSV",
         data=selected_month_df.to_csv(index=False).encode("utf-8"),
