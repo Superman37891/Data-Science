@@ -1,7 +1,10 @@
-# Data folders
+# Data folders and files
 data/
 *.csv
 *.parquet
+
+# Allow the preprocessed preview file
+!preprocessed_preview_data/nyc_taxi_preview_50.csv
 
 # Environment variables
 .env
