@@ -4,7 +4,7 @@ data/
 *.parquet
 
 # Allow the preprocessed preview file
-!preprocessed_preview_data/nyc_taxi_preview_50.csv
+!preprocessed_preview_data/nyc_taxi_preview_15.csv
 
 # Environment variables
 .env

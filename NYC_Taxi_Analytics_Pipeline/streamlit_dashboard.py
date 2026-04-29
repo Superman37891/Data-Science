@@ -140,12 +140,9 @@ st.bar_chart(payment_summary_df[["stdev_fare"]])
 # =============
 # Data Preview
 # =============
-st.subheader("Data Preview (50 rows)")
+st.subheader("Data Preview (15 rows)")
 
-preview_path = os.path.join(BASE_DIR, "preprocessed_preview_data", "nyc_taxi_preview_50.csv")
-st.write("BASE_DIR:", BASE_DIR)
-st.write("Preview path:", preview_path)
-st.write("Exists?", os.path.exists(preview_path))
+preview_path = os.path.join(BASE_DIR, "preprocessed_preview_data", "nyc_taxi_preview_15.csv")
 df_preview = pd.read_csv(preview_path)
 st.dataframe(df_preview)
 
@@ -154,7 +151,7 @@ st.caption("Download the Preview as a CSV")
 st.download_button(
     label="Download Preview Data as CSV",
     data=preview_csv,
-    file_name=f"nyc_taxi_preview_{year_selected}.csv",
+    file_name=f"nyc_taxi_preview.csv",
     mime="text/csv"
 )
 
@@ -176,7 +173,7 @@ st.caption("If you want the raw monthly data, get it from the NYC Taxi Dataset w
 month_selected = st.number_input("Month", min_value=1, max_value=12, step=1)
 
 if st.button("Download Monthly Summary Data"):
-    selected_month_df = monthly_summary_df[monthly_summary_df["month_num"] == month_selected and monthly_summary_df["year"] == year_selected]
+    selected_month_df = monthly_summary_df[monthly_summary_df["month_num"] == month_selected & monthly_summary_df["year"] == year_selected]
     st.download_button(
         label=f"Download {year_selected}_{month_selected} Summary Data as CSV",
         data=selected_month_df.to_csv(index=False).encode("utf-8"),
