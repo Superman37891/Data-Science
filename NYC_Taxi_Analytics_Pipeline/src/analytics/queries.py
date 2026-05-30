@@ -228,6 +228,8 @@ SELECT
         WHEN payment_type = 6 THEN 'Voided trip'
         ELSE 'Other'
     END AS payment_method,
+    year,
+    month,
     COUNT(*) AS total_trips,
     SUM(fare_amount) AS total_revenue,
     ROUND(AVG(fare_amount), 4) AS avg_fare,
@@ -253,6 +255,13 @@ GROUP BY
 KPI_OVERALL_PAYMENT_TYPE_SUMMARY_QUERY = f"""
 SELECT * 
 FROM taxi_data.kpi_overall_payment_type_summary
+"""
+
+def year_payment_type_summary_query(year_selected):
+    return f"""
+    SELECT *
+    FROM taxi_data.kpi_overall_payment_type_summary
+    WHERE year={year_selected}
 """
 
 CREATE_KPI_MONTHLY_PAYMENT_TYPE_SUMMARY_QUERY = f"""

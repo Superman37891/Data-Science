@@ -41,7 +41,7 @@ if year_selected == "All Years":
     hourly_summary_df = run_query(queries.OVERALL_HOURLY_TRIPS_QUERY)
 else:
     monthly_summary_df = run_query(queries.kpi_monthly_summary_query(year_selected))
-    payment_summary_df = run_query(queries.year_monthly_payment_type_summary_query(year_selected))
+    payment_summary_df = run_query(queries.year_payment_type_summary_query(year_selected))
     payment_summary_df = payment_summary_df.set_index("payment_method")
     hourly_summary_df = run_query(queries.year_hourly_trips_query(year_selected))
 # ===================
