@@ -31,19 +31,24 @@ def run_query(query):
 # ========================
 st.sidebar.header("Filters")
 
-year_selected = st.sidebar.selectbox("Select Year", [2024, 2025, 2026])
+year_selected = st.sidebar.selectbox("Select Year", ["All Years", 2026, 2025, 2024])
 
 # Create dataframes through Athena queries
-monthly_summary_df = run_query(queries.KPI_MONTHLY_SUMMARY_QUERY)
-payment_summary_df = run_query(queries.PAYMENT_METHOD_STATS_QUERY)
-payment_summary_df = payment_summary_df.set_index("payment_method")
-hourly_df = run_query(queries.HOURLY_TRIPS_QUERY)
+if year_selected == "All Years":
+    monthly_summary_df = run_query(queries.KPI_OVERALL_MONTHLY_SUMMARY_QUERY)
+    payment_summary_df = run_query(queries.KPI_MONTHLY_PAYMENT_TYPE_SUMMARY_QUERY)
+    payment_summary_df = payment_summary_df.set_index("payment_method")
+    hourly_summary_df = run_query(queries.OVERALL_HOURLY_TRIPS_QUERY)
+else:
+    monthly_summary_df = run_query(queries.kpi_monthly_summary_query(year_selected))
+    payment_summary_df = run_query(queries.year_monthly_payment_type_summary_query(year_selected))
+    payment_summary_df = payment_summary_df.set_index("payment_method")
+    hourly_summary_df = run_query(queries.year_hourly_trips_query(year_selected))
 # ===================
 # Derived Metrics
 # ===================
 
 monthly_summary_df["month_date"] = pd.to_datetime(monthly_summary_df["month_date"])
-monthly_summary_df = monthly_summary_df[monthly_summary_df["year"] == year_selected]
 monthly_summary_df["month_num"] = monthly_summary_df["month_date"].dt.month
 monthly_summary_df = monthly_summary_df.set_index("month_date")
 
@@ -112,7 +117,7 @@ st.line_chart(monthly_summary_df["avg_fare"])
 # Avg Speed by Hour
 st.subheader("Hourly Avg Speed (MPH)")
 st.caption("X-axis: Hour of Day | Y-axis: Avg Speed (MPH)")
-st.line_chart(hourly_df.set_index("hour_of_day")["avg_speed_mph"])
+st.line_chart(hourly_summary_df.set_index("hour_of_day")["avg_speed_mph"])
 
 # ==============================
 # Stats by payment type
@@ -159,7 +164,7 @@ st.download_button(
 st.subheader("Yearly Data Summary Download")
 
 if st.button("Download Yearly Summary Data"):
-    yearly_data_df = monthly_summary_df[monthly_summary_df["year"] == year_selected]
+    yearly_data_df = monthly_summary_df.copy()
     st.download_button(
         label=f"Download {year_selected} Summary Data as CSV",
         data=yearly_data_df.to_csv(index=False).encode("utf-8"),
@@ -174,8 +179,7 @@ month_selected = st.number_input("Month", min_value=1, max_value=12, step=1)
 
 if st.button("Download Monthly Summary Data"):
     selected_month_df = monthly_summary_df[
-        (monthly_summary_df["month_num"] == month_selected) &
-        (monthly_summary_df["year"] == year_selected)
+        (monthly_summary_df["month_num"] == month_selected)
     ]
     st.download_button(
         label=f"Download {year_selected}_{month_selected:02d} Summary Data as CSV",

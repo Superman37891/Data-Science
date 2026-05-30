@@ -38,7 +38,7 @@ TBLPROPERTIES (
 # Create a view adding a month_date column
 # to help with dates visualization software
 YELLOW_TAXI_ENRICHED_CREATE_QUERY = f"""
-CREATE OR REPLACE VIEW yellow_taxi_enriched AS
+CREATE OR REPLACE VIEW taxi_data.yellow_taxi_enriched AS
 SELECT
     *,
     DATE_PARSE(
@@ -60,11 +60,11 @@ SELECT
   month, 
   month_date,
   COUNT(*) total_trips,
-  SUM(fare_amount) total_revenue,
-  AVG(fare_amount) avg_fare,
-  AVG(trip_distance) avg_distance,
-  AVG(speed_mph) avg_speed_mph,
-  SUM(SUM(fare_amount)) OVER (ORDER BY month_date ASC) cumulative_revenue
+  ROUND(SUM(fare_amount), 4) total_revenue,
+  ROUND(AVG(fare_amount), 4) avg_fare,
+  ROUND(AVG(trip_distance), 4) avg_distance,
+  ROUND(AVG(speed_mph), 4) avg_speed_mph,
+  ROUND(SUM(SUM(fare_amount)) OVER (ORDER BY month_date ASC), 4) cumulative_revenue
 FROM
   yellow_taxi_enriched
 GROUP BY year, month, month_date
@@ -73,12 +73,23 @@ GROUP BY year, month, month_date
 # to help plot on BI software
 # and to help with other queries
 # that want multiple monthly statistics
-KPI_MONTHLY_SUMMARY_QUERY = f"""
-SELECT * FROM taxi_data.kpi_monthly_summary
+
+KPI_OVERALL_MONTHLY_SUMMARY_QUERY = f"""
+    SELECT *
+    FROM taxi_data.kpi_monthly_summary
+    ORDER BY month_date
+"""
+
+def kpi_monthly_summary_query(year_selected):
+    return f"""
+    SELECT *
+    FROM taxi_data.kpi_monthly_summary
+    WHERE year={year_selected}
+    ORDER BY month_date
 """
 
 # Get the top 5 months by revenue
-TOP_5_REVENUE_MONTHS_QUERY = """
+TOP_5_OVERALL_REVENUE_MONTHS_QUERY = """
 SELECT year, month, total_revenue
 FROM kpi_monthly_summary
 ORDER BY total_revenue DESC
@@ -87,40 +98,125 @@ LIMIT 5
 
 # Get the growth percentage in revenue
 # from the previous to current month
-REVENUE_GROWTH_MONTHLY_QUERY = """
+KPI_OVERALL_REVENUE_GROWTH_MONTHLY_QUERY = """
 WITH growth_calc AS (
-    SELECT 
+    SELECT
+        year,
+        month,
         month_date,
-        total_revenue,
-        LAG(total_revenue) OVER (ORDER BY month_date) AS prev_month_revenue,
         total_trips,
-        LAG(total_trips) OVER (ORDER BY month_date) AS prev_month_trips
+        total_revenue,
+        LAG(total_revenue) OVER (
+            ORDER BY month_date
+        ) AS prev_month_revenue,
+        LAG(total_trips) OVER (
+            ORDER BY month_date
+        )
+        AS prev_month_trips
     FROM kpi_monthly_summary
 )
-SELECT 
-    month_date,
+SELECT
+    year,
+    month,
     total_revenue,
     total_trips,
-    ROUND(((total_revenue - prev_month_revenue) / prev_month_revenue) * 100, 2) AS revenue_growth_pct,
-    ROUND(((total_trips - prev_month_trips) / prev_month_trips) * 100, 2) AS trip_growth_pct
+    CASE
+    WHEN prev_month_revenue IS NULL THEN NULL
+    ELSE ROUND(
+    100*(total_revenue - prev_month_revenue) / NULLIF(CAST(prev_month_revenue AS DOUBLE), 0),
+        4
+    ) END AS revenue_growth_pct,
+    CASE 
+    WHEN prev_month_trips IS NULL THEN NULL
+    ELSE ROUND(
+        100.0 * (total_trips - prev_month_trips)
+        / NULLIF(prev_month_trips, 0),
+        4
+    )
+    END AS trip_growth_pct
 FROM growth_calc
-ORDER BY month_date;
+ORDER BY month_date
+"""
+
+def year_revenue_growth_monthly_query(year_selected):
+    return f"""
+    WITH growth_calc AS (
+    SELECT
+        year,
+        month,
+        month_date,
+        total_trips,
+        total_revenue,
+        LAG(total_revenue) OVER (
+            ORDER BY month_date
+        ) AS prev_month_revenue,
+        LAG(total_trips) OVER (
+            ORDER BY month_date
+        )
+        AS prev_month_trips
+    FROM kpi_monthly_summary
+)
+SELECT
+    year,
+    month,
+    total_revenue,
+    total_trips,
+    CASE
+    WHEN prev_month_revenue IS NULL THEN NULL
+    ELSE ROUND(
+    100*(total_revenue - prev_month_revenue) / NULLIF(CAST(prev_month_revenue AS DOUBLE), 0),
+        4
+    ) END AS revenue_growth_pct,
+    CASE 
+    WHEN prev_month_trips IS NULL THEN NULL
+    ELSE ROUND(
+        100.0 * (total_trips - prev_month_trips)
+        / NULLIF(prev_month_trips, 0),
+        4
+    )
+    END AS trip_growth_pct
+FROM growth_calc
+WHERE year={year_selected}
+ORDER BY month_date
 """
 
 # Get the avg speed per hour of the day
 # to help identify when traffic gridlock happens
-HOURLY_TRIPS_QUERY = f"""
+OVERALL_HOURLY_TRIPS_QUERY = f"""
 SELECT 
     EXTRACT(HOUR FROM tpep_pickup_datetime) AS hour_of_day,
     COUNT(*) AS total_trips,
-    ROUND(AVG(trip_distance / (NULLIF(trip_duration_min, 0) / 60.0)), 2) AS avg_speed_mph
+    ROUND(SUM(fare_amount), 4) AS total_revenue,
+    ROUND(AVG(fare_amount), 4) AS avg_fare,
+    ROUND(AVG(trip_distance), 4) AS avg_distance,
+    ROUND(AVG(passenger_count), 4) AS avg_passenger_count,
+    ROUND(AVG(trip_duration_min), 4) AS avg_trip_duration_min,
+    ROUND(AVG(trip_distance / (NULLIF(trip_duration_min, 0) / 60.0)), 4) AS avg_speed_mph
+    
 FROM yellow_taxi_processed
 GROUP BY 1
 ORDER BY hour_of_day;
 """
+def year_hourly_trips_query(year_selected):
+    return f"""
+    SELECT 
+        EXTRACT(HOUR FROM tpep_pickup_datetime) AS hour_of_day,
+        COUNT(*) AS total_trips,
+        ROUND(SUM(fare_amount), 4) AS total_revenue,
+        ROUND(AVG(fare_amount), 4) AS avg_fare,
+        ROUND(AVG(trip_distance), 4) AS avg_distance,
+        ROUND(AVG(passenger_count), 4) AS avg_passenger_count,
+        ROUND(AVG(trip_duration_min), 4) AS avg_trip_duration_min,
+        ROUND(AVG(trip_distance / (NULLIF(trip_duration_min, 0) / 60.0)), 4) AS avg_speed_mph
+        
+    FROM yellow_taxi_processed
+    WHERE year={year_selected}
+    GROUP BY 1
+    ORDER BY hour_of_day;
+"""
 
-CREATE_KPI_PAYMENT_TYPE_SUMMARY_QUERY = f"""
-CREATE OR REPLACE VIEW taxi_data.kpi_payment_type_summary AS
+CREATE_KPI_OVERALL_PAYMENT_TYPE_SUMMARY_QUERY = f"""
+CREATE OR REPLACE VIEW taxi_data.kpi_overall_payment_type_summary AS
 SELECT
     CASE 
         WHEN payment_type = 0 THEN 'Flex Fare Trip'
@@ -132,13 +228,12 @@ SELECT
         WHEN payment_type = 6 THEN 'Voided trip'
         ELSE 'Other'
     END AS payment_method,
-
     COUNT(*) AS total_trips,
     SUM(fare_amount) AS total_revenue,
-    AVG(fare_amount) AS avg_fare,
-    STDDEV(fare_amount) AS stdev_fare,
-    AVG(trip_distance) AS avg_distance,
-    AVG(speed_mph) AS avg_speed_mph
+    ROUND(AVG(fare_amount), 4) AS avg_fare,
+    ROUND(STDDEV(fare_amount), 4) AS stddev_fare,
+    ROUND(AVG(trip_distance), 4) AS avg_distance,
+    ROUND(AVG(speed_mph), 4) AS avg_speed_mph
 
 FROM yellow_taxi_enriched
 
@@ -154,64 +249,59 @@ GROUP BY
         ELSE 'Other'
     END
 """
-# Get the stats of trips by different payment methods
-PAYMENT_METHOD_STATS_QUERY = f"""
-SELECT *
-FROM taxi_data.kpi_payment_type_summary
+
+KPI_OVERALL_PAYMENT_TYPE_SUMMARY_QUERY = f"""
+SELECT * 
+FROM taxi_data.kpi_overall_payment_type_summary
 """
 
-# Get specific stats of fare amounts
-# by payment types
-FARE_STATS_BY_PAYMENT_TYPE_QUERY = f"""
-SELECT 
+CREATE_KPI_MONTHLY_PAYMENT_TYPE_SUMMARY_QUERY = f"""
+CREATE OR REPLACE VIEW taxi_data.kpi_monthly_payment_type_summary AS
+SELECT
     CASE 
-    	WHEN payment_type = 0 THEN 'Flex Fare Trip'
+        WHEN payment_type = 0 THEN 'Flex Fare Trip'
         WHEN payment_type = 1 THEN 'Credit Card'
         WHEN payment_type = 2 THEN 'Cash'
-    	WHEN payment_type = 3 THEN 'No Charge'
-    	WHEN payment_type = 4 THEN 'Dispute'
-    	WHEN payment_type = 5 THEN 'Unknown'
-    	WHEN payment_type = 6 THEN 'Voided trip'
+        WHEN payment_type = 3 THEN 'No Charge'
+        WHEN payment_type = 4 THEN 'Dispute'
+        WHEN payment_type = 5 THEN 'Unknown'
+        WHEN payment_type = 6 THEN 'Voided trip'
         ELSE 'Other'
     END AS payment_method,
-    MIN(fare_amount) AS min_fare,
-    MAX(fare_amount) AS max_fare,
-    AVG(fare_amount) AS avg_fare,
-    STDDEV(fare_amount) AS stdev_fare,
-    COUNT(*) AS trip_count
-FROM yellow_taxi_processed
-GROUP BY 1
-ORDER BY 1
+    year,
+    month,
+    COUNT(*) AS total_trips,
+    SUM(fare_amount) AS total_revenue,
+    ROUND(AVG(fare_amount), 4) AS avg_fare,
+    ROUND(STDDEV(fare_amount), 4) AS stddev_fare,
+    ROUND(AVG(trip_distance), 4) AS avg_distance,
+    ROUND(AVG(speed_mph), 4) AS avg_speed_mph
+
+FROM yellow_taxi_enriched
+
+GROUP BY 
+    CASE 
+        WHEN payment_type = 0 THEN 'Flex Fare Trip'
+        WHEN payment_type = 1 THEN 'Credit Card'
+        WHEN payment_type = 2 THEN 'Cash'
+        WHEN payment_type = 3 THEN 'No Charge'
+        WHEN payment_type = 4 THEN 'Dispute'
+        WHEN payment_type = 5 THEN 'Unknown'
+        WHEN payment_type = 6 THEN 'Voided trip'
+        ELSE 'Other'
+    END, year, month
 """
 
-MONTHLY_TRIPS_QUERY = """
-SELECT month_date, total_trips
-FROM kpi_monthly_summary
-ORDER BY month_date
+KPI_MONTHLY_PAYMENT_TYPE_SUMMARY_QUERY = f"""
+SELECT * 
+FROM taxi_data.kpi_monthly_payment_type_summary
+ORDER BY year, month
 """
 
-MONTHLY_AVG_SPEED_QUERY = """
-SELECT month_date, avg_speed_mph
-FROM kpi_monthly_summary
-ORDER BY month_date
+def year_monthly_payment_type_summary_query(year_selected):
+    return f"""
+    SELECT *
+    FROM taxi_data.kpi_monthly_payment_type_summary
+    WHERE year={year_selected}
+    ORDER BY year, month 
 """
-
-MONTHLY_AVG_FARE_QUERY = """
-SELECT month_date, avg_fare
-FROM kpi_monthly_summary
-ORDER BY month_date
-"""
-
-MONTHLY_REVENUE_QUERY = """
-SELECT month_date, total_revenue
-FROM kpi_monthly_summary
-ORDER BY month_date
-"""
-
-MONTHLY_CUMULATIVE_REVENUE_QUERY = """
-SELECT month_date, cumulative_revenue
-FROM kpi_monthly_summary
-ORDER BY month_date
-"""
-
-
