@@ -36,7 +36,7 @@ year_selected = st.sidebar.selectbox("Select Year", ["All Years", 2026, 2025, 20
 # Create dataframes through Athena queries
 if year_selected == "All Years":
     monthly_summary_df = run_query(queries.KPI_OVERALL_MONTHLY_SUMMARY_QUERY)
-    payment_summary_df = run_query(queries.KPI_MONTHLY_PAYMENT_TYPE_SUMMARY_QUERY)
+    payment_summary_df = run_query(queries.KPI_OVERALL_PAYMENT_TYPE_SUMMARY_QUERY)
     payment_summary_df = payment_summary_df.set_index("payment_method")
     hourly_summary_df = run_query(queries.OVERALL_HOURLY_TRIPS_QUERY)
 else:
