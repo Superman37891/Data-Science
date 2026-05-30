@@ -6,3 +6,4 @@ pyathena
 python-dotenv
 boto3
 botocore
+pyarrow

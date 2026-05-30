@@ -31,7 +31,7 @@ def run_query(query):
 # ========================
 st.sidebar.header("Filters")
 
-year_selected = st.sidebar.selectbox("Select Year", [2025, 2026])
+year_selected = st.sidebar.selectbox("Select Year", [2024, 2025, 2026])
 
 # Create dataframes through Athena queries
 monthly_summary_df = run_query(queries.KPI_MONTHLY_SUMMARY_QUERY)
