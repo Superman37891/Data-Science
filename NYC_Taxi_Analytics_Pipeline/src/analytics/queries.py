@@ -228,8 +228,6 @@ SELECT
         WHEN payment_type = 6 THEN 'Voided trip'
         ELSE 'Other'
     END AS payment_method,
-    year,
-    month,
     COUNT(*) AS total_trips,
     SUM(fare_amount) AS total_revenue,
     ROUND(AVG(fare_amount), 4) AS avg_fare,
@@ -257,10 +255,47 @@ SELECT *
 FROM taxi_data.kpi_overall_payment_type_summary
 """
 
+CREATE_KPI_YEARLY_PAYMENT_TYPE_SUMMARY_QUERY = """
+CREATE OR REPLACE VIEW taxi_data.kpi_yearly_payment_type_summary AS
+SELECT
+    CASE 
+        WHEN payment_type = 0 THEN 'Flex Fare Trip'
+        WHEN payment_type = 1 THEN 'Credit Card'
+        WHEN payment_type = 2 THEN 'Cash'
+        WHEN payment_type = 3 THEN 'No Charge'
+        WHEN payment_type = 4 THEN 'Dispute'
+        WHEN payment_type = 5 THEN 'Unknown'
+        WHEN payment_type = 6 THEN 'Voided trip'
+        ELSE 'Other'
+    END AS payment_method,
+    year,
+    COUNT(*) AS total_trips,
+    SUM(fare_amount) AS total_revenue,
+    ROUND(AVG(fare_amount), 4) AS avg_fare,
+    ROUND(STDDEV(fare_amount), 4) AS stddev_fare,
+    ROUND(AVG(trip_distance), 4) AS avg_distance,
+    ROUND(AVG(speed_mph), 4) AS avg_speed_mph
+
+FROM yellow_taxi_enriched
+
+GROUP BY 
+    CASE 
+        WHEN payment_type = 0 THEN 'Flex Fare Trip'
+        WHEN payment_type = 1 THEN 'Credit Card'
+        WHEN payment_type = 2 THEN 'Cash'
+        WHEN payment_type = 3 THEN 'No Charge'
+        WHEN payment_type = 4 THEN 'Dispute'
+        WHEN payment_type = 5 THEN 'Unknown'
+        WHEN payment_type = 6 THEN 'Voided trip'
+        ELSE 'Other'
+    END, year
+"""
+
+# For Streamlit plotting purposes by year
 def year_payment_type_summary_query(year_selected):
     return f"""
     SELECT *
-    FROM taxi_data.kpi_overall_payment_type_summary
+    FROM taxi_data.kpi_yearly_payment_type_summary
     WHERE year={year_selected}
 """
 
