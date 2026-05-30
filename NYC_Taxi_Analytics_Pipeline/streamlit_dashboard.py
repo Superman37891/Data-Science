@@ -43,12 +43,9 @@ hourly_df = run_query(queries.HOURLY_TRIPS_QUERY)
 # ===================
 
 monthly_summary_df["month_date"] = pd.to_datetime(monthly_summary_df["month_date"])
-monthly_summary_df = monthly_summary_df.sort_values("month_date")
-monthly_summary_df = monthly_summary_df.set_index("month_date")
 monthly_summary_df = monthly_summary_df[monthly_summary_df["year"] == year_selected]
 monthly_summary_df["month_num"] = monthly_summary_df["month_date"].dt.month
-# this may have a compiler warning of unexpected type (str, property), but this is because type checkers don't know the exact typing of the data
-# the month value (a categorical string key in the Athena dataset) as an int
+monthly_summary_df = monthly_summary_df.set_index("month_date")
 
 monthly_summary_df = monthly_summary_df.sort_values("month_date")
 
