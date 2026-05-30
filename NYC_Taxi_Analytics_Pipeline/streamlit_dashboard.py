@@ -45,6 +45,7 @@ hourly_df = run_query(queries.HOURLY_TRIPS_QUERY)
 monthly_summary_df["month_date"] = pd.to_datetime(monthly_summary_df["month_date"])
 monthly_summary_df = monthly_summary_df.sort_values("month_date")
 monthly_summary_df = monthly_summary_df.set_index("month_date")
+monthly_summary_df = monthly_summary_df[monthly_summary_df["year"] == year_selected]
 monthly_summary_df["month_num"] = monthly_summary_df["month_date"].dt.month
 # this may have a compiler warning of unexpected type (str, property), but this is because type checkers don't know the exact typing of the data
 # the month value (a categorical string key in the Athena dataset) as an int
@@ -94,22 +95,22 @@ col3.metric("Avg Revenue (USD) / Trip", f"${monthly_summary_df['avg_fare'].mean(
 # Monthly Total Revenue
 st.subheader("Monthly Total Revenue (USD)")
 st.caption("X-axis: Month | Y-Axis: Total Monthly Revenue (USD)")
-st.bar_chart(monthly_summary_df["total_revenue"])
+st.line_chart(monthly_summary_df["total_revenue"])
 
 # Monthly Cumulative Revenue
 st.subheader("Monthly Cumulative Revenue (USD)")
 st.caption("X-axis: Month | Y-Axis: Monthly Cumulative Revenue (USD)")
-st.bar_chart(monthly_summary_df["cumulative_revenue"])
+st.line_chart(monthly_summary_df["cumulative_revenue"])
 
 # Monthly Trips
 st.subheader("Monthly Trips")
 st.caption("X-axis: Month | Y-axis: Monthly Trips")
-st.bar_chart(monthly_summary_df["total_trips"])
+st.line_chart(monthly_summary_df["total_trips"])
 
 # Monthly Avg Fare
 st.subheader("Monthly Avg Revenue (USD) per Trip")
 st.caption("X-axis: Month | Y-axis: Monthly Avg Revenue (USD) per Trip")
-st.bar_chart(monthly_summary_df["avg_fare"])
+st.line_chart(monthly_summary_df["avg_fare"])
 
 # Avg Speed by Hour
 st.subheader("Hourly Avg Speed (MPH)")
