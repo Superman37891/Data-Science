@@ -140,7 +140,7 @@ st.bar_chart(payment_summary_df[["avg_fare"]])
 # Standard Deviation of Fare by Payment Type
 st.subheader("Standard Deviation of Fare (USD) by Payment Method")
 st.caption("X-axis: Payment Method | Y-axis: Fare Standard Deviation (USD) by Payment Method")
-st.bar_chart(payment_summary_df[["stdev_fare"]])
+st.bar_chart(payment_summary_df[["stddev_fare"]])
 
 # =============
 # Data Preview
