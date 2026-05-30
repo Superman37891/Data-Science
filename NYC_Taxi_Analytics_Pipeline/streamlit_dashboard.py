@@ -63,7 +63,7 @@ st.caption("Interactive dashboard analyzing NYC taxi revenue, trips, fares, and 
 # ========================
 # KPI SUMMARY
 # ========================
-st.subheader(f"Overview for year {year_selected}")
+st.subheader(f"Overview for {year_selected}")
 
 col1, col2, col3 = st.columns(3)
 
