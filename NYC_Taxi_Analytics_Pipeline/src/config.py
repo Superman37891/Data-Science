@@ -14,4 +14,6 @@ TABLE_NAME = "yellow_taxi_processed"
 ENRICHED_TABLE_NAME = "yellow_taxi_enriched"
 DATABASE = "taxi_data"
 
+print(RAW_FOLDER)
+print(PROCESSED_FOLDER)
 print(BUCKET_NAME)

@@ -220,6 +220,7 @@ def main():
     # 1. GET RAW FILES
     # =========================
     raw_keys = get_s3_keys(prefix=RAW_PREFIX)
+    raw_keys = sorted(raw_keys)
 
     print(f"Found {len(raw_keys)} raw files")
 
@@ -227,6 +228,8 @@ def main():
     # 2. GET ALL PROCESSED KEYS ONCE (FAST)
     # =========================
     processed_keys = set(get_s3_keys(prefix=PROCESSED_PREFIX))
+    processed_keys = sorted(processed_keys)
+
     processed_files = {
     key.split("/")[-1] for key in processed_keys
     }
@@ -276,7 +279,7 @@ def main():
         processed_key = (
             f"{PROCESSED_PREFIX}"
             f"year={expected_year}/month={str(expected_month).zfill(2)}/"
-            f"{key}"
+            f"{file_name}"
         )
 
         row_loss_percent = ((1-cleaned_df_len/raw_df_len)*100 if raw_df_len > 0 else 0)

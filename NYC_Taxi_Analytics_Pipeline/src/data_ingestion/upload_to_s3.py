@@ -24,6 +24,7 @@ def upload_file(file_path):
     if file_exists(BUCKET_NAME, s3_key):
         print(f"Skipped (already exists): {file_name}\n")
         return
+    print(f"File does not exist. Uploading: {file_name}")
     s3.upload_file(file_path, BUCKET_NAME, s3_key)
     print(f"Uploaded: {file_name} → s3://{BUCKET_NAME}/{s3_key}\n")
 
@@ -31,7 +32,7 @@ def main():
     BASE_DIR = Path(__file__).resolve().parent.parent.parent
     raw_folder = BASE_DIR / "data" / "raw"
 
-    for file_name in os.listdir(raw_folder):
+    for file_name in sorted(os.listdir(raw_folder)):
         if not file_name.endswith(".parquet"):
             continue
 
