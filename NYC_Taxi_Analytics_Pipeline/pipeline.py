@@ -13,7 +13,8 @@ def main():
     if last is None:
         last_year, last_month = 2024, '01'
     else:
-        last_year, last_month = last
+        last_year = last["year"]
+        last_month = last["month"]
 
     available = get_all_available()
     if not available:
