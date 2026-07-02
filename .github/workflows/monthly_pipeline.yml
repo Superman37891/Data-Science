@@ -1,8 +1,10 @@
 name: Monthly NYC Taxi Pipeline
 
 on:
+  push:
+    paths:
+      - "NYC Taxi Analytics Pipeline/**"
   workflow_dispatch:
-
   schedule:
     # Runs on the 5th day of every month at 6:00 UTC
     - cron: "0 6 5 * *"
@@ -10,7 +12,8 @@ on:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
-
+    env:
+      PYTHONUNBUFFERED: 1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,6 +22,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
 
       - name: Install dependencies
         run: |
@@ -34,11 +42,8 @@ jobs:
 
       - name: Run pipeline
         run: |
-          set -e
-          python pipeline.py          
-
+          python pipeline.py
         env:
-          PYTHONUNBUFFERED: 1
           BUCKET_NAME: ${{ secrets.YELLOW_TAXI_BUCKET_NAME }}
           RAW_FOLDER: ${{ secrets.YELLOW_TAXI_RAW_FOLDER }}
           PROCESSED_FOLDER: ${{ secrets.YELLOW_TAXI_PROCESSED_FOLDER }}
