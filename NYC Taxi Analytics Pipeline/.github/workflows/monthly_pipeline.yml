@@ -1,0 +1,51 @@
+name: Monthly NYC Taxi Pipeline
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    # Runs on the 2nd day of every month at 6:00 UTC
+    - cron: "0 6 2 * *"
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.YELLOW_TAXI_AWS_REGION }}
+
+      - name: Run pipeline
+        run: |
+          set -e
+          python pipeline.py
+        env:
+          BUCKET_NAME: ${{ secrets.YELLOW_TAXI_BUCKET_NAME }}
+          RAW_FOLDER: ${{ secrets.YELLOW_TAXI_RAW_FOLDER }}
+          PROCESSED_FOLDER: ${{ secrets.YELLOW_TAXI_PROCESSED_FOLDER }}
+          S3_STAGING_DIR: ${{ secrets.YELLOW_TAXI_S3_STAGING_DIR }}
+          AWS_REGION: ${{ secrets.YELLOW_TAXI_AWS_REGION }}
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-logs
+          path: logs/
