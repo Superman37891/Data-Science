@@ -3,7 +3,7 @@ import json
 import requests
 from src.utils.s3_client import get_s3_client
 from src.etl.process_taxi_data import check_if_file_exists_in_s3
-from src.config import get_config
+import src.config as config
 from datetime import datetime
 
 import logging
@@ -14,14 +14,14 @@ s3 = get_s3_client()
 
 def get_last_processed():
     try:
-        obj = s3.get_object(Bucket=get_config("YELLOW_TAXI_BUCKET_NAME"), Key="meta/last_processed.json")
+        obj = s3.get_object(Bucket=config.YELLOW_TAXI_BUCKET_NAME, Key="meta/last_processed.json")
         return json.loads(obj["Body"].read())
     except:
         return None
 
 def save_last_processed(year, month, file_name):
     s3.put_object(
-        Bucket=get_config("YELLOW_TAXI_BUCKET_NAME"),
+        Bucket=config.YELLOW_TAXI_BUCKET_NAME,
         Key="meta/last_processed.json",
         Body=json.dumps({
             "year": year,
@@ -38,8 +38,8 @@ def get_latest_available():
         max_month = current_month if year == current_year else 12
         for month in range(max_month, 0, -1):
             filename = f"yellow_tripdata_{year}-{month:02d}.parquet"
-            url = f"{get_config('TLC_BASE_URL')}/{filename}"
-            logger.info(f"TLC_BASE_URL = {get_config('TLC_BASE_URL')!r}")
+            url = f"{config.TLC_BASE_URL}/{filename}"
+            logger.info(f"TLC_BASE_URL = {config.TLC_BASE_URL!r}")
             response = requests.head(url)
 
             if response.status_code == 200:
@@ -54,12 +54,12 @@ def stream_download_to_s3(year: int, month: int) -> str:
     """
 
     filename = f"yellow_tripdata_{year}-{month:02d}.parquet"
-    raw_s3_key = f"{get_config('YELLOW_TAXI_RAW_FOLDER')}/year={year}/month={month:02d}/{filename}"
-    if check_if_file_exists_in_s3(get_config('YELLOW_TAXI_BUCKET_NAME'), raw_s3_key):
+    raw_s3_key = f"{config.YELLOW_TAXI_RAW_FOLDER}/year={year}/month={month:02d}/{filename}"
+    if check_if_file_exists_in_s3(config.YELLOW_TAXI_BUCKET_NAME, raw_s3_key):
         logger.info("Raw file already exists.")
         return raw_s3_key
 
-    url = f"{get_config('TLC_BASE_URL')}/{filename}"
+    url = f"{config.TLC_BASE_URL}/{filename}"
 
     logger.info(f"Streaming {filename} → S3")
 
@@ -73,11 +73,11 @@ def stream_download_to_s3(year: int, month: int) -> str:
             buffer.extend(chunk)
 
     s3.put_object(
-        Bucket=get_config('YELLOW_TAXI_BUCKET_NAME'),
+        Bucket=config.YELLOW_TAXI_BUCKET_NAME,
         Key=raw_s3_key,
         Body=bytes(buffer)
     )
 
-    logger.info(f"Uploaded to s3://{get_config('YELLOW_TAXI_BUCKET_NAME')}/{raw_s3_key}")
+    logger.info(f"Uploaded to s3://{config.YELLOW_TAXI_BUCKET_NAME}/{raw_s3_key}")
 
     return raw_s3_key

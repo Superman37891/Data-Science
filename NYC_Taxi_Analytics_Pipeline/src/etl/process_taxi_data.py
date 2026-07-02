@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from io import BytesIO
 
-from src.config import get_config
+import src.config as config
 
 from src.utils.s3_client import get_s3_client
 
@@ -20,12 +20,12 @@ logger = logging.getLogger(__name__)
 
 s3 = get_s3_client()
 
-YELLOW_TAXI_BUCKET_NAME = get_config('YELLOW_TAXI_BUCKET_NAME')
+YELLOW_TAXI_BUCKET_NAME = config.YELLOW_TAXI_BUCKET_NAME
 
 detect_duplicates=True
 
-RAW_PREFIX = f"{get_config('YELLOW_TAXI_RAW_FOLDER')}/"
-PROCESSED_PREFIX = f"{get_config('YELLOW_TAXI_PROCESSED_FOLDER')}/"
+RAW_PREFIX = f"{config.YELLOW_TAXI_RAW_FOLDER}/"
+PROCESSED_PREFIX = f"{config.YELLOW_TAXI_PROCESSED_FOLDER}/"
 
 MIN_EXPECTED_COLUMNS = [
     "VendorID",

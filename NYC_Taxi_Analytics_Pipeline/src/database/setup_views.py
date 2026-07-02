@@ -1,7 +1,7 @@
 import src.analytics.queries as queries
 from pyathena import connect
 import streamlit as st
-from src.config import get_config
+import src.config as config
 
 from dotenv import load_dotenv
 
@@ -12,11 +12,11 @@ load_dotenv()
 
 def setup_database():
     connection = connect(
-        s3_staging_dir=get_config('YELLOW_TAXI_S3_STAGING_DIR'),
-        region_name=get_config('YELLOW_TAXI_AWS_REGION'),
+        s3_staging_dir=config.YELLOW_TAXI_S3_STAGING_DIR,
+        region_name=config.YELLOW_TAXI_AWS_REGION,
         aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
         aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
-        schema_name=get_config('YELLOW_TAXI_DATABASE')
+        schema_name=config.YELLOW_TAXI_DATABASE
     )
     cursor = connection.cursor()
 
