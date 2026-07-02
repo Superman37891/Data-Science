@@ -51,6 +51,7 @@ jobs:
         run: |
           python pipeline.py
         env:
+          TLC_BASE_URL: ${{ secrets.TLC_BASE_URL }}
           BUCKET_NAME: ${{ secrets.YELLOW_TAXI_BUCKET_NAME }}
           RAW_FOLDER: ${{ secrets.YELLOW_TAXI_RAW_FOLDER }}
           PROCESSED_FOLDER: ${{ secrets.YELLOW_TAXI_PROCESSED_FOLDER }}
