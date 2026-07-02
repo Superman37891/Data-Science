@@ -3,6 +3,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def get_config(key):
+    return os.environ[key]
+
+'''
 YELLOW_TAXI_BUCKET_NAME = os.environ["YELLOW_TAXI_BUCKET_NAME"]
 YELLOW_TAXI_S3_STAGING_DIR = os.environ["YELLOW_TAXI_S3_STAGING_DIR"]
 YELLOW_TAXI_AWS_REGION = os.environ["YELLOW_TAXI_AWS_REGION"]
@@ -12,5 +16,4 @@ YELLOW_TAXI_PROCESSED_FOLDER = os.environ["YELLOW_TAXI_PROCESSED_FOLDER"]
 YELLOW_TAXI_TABLE_NAME = os.environ["YELLOW_TAXI_TABLE_NAME"]
 YELLOW_TAXI_ENRICHED_TABLE_NAME = os.environ["YELLOW_TAXI_ENRICHED_TABLE_NAME"]
 YELLOW_TAXI_DATABASE = os.environ["YELLOW_TAXI_DATABASE"]
-
-TLC_BASE_URL = os.environ["TLC_BASE_URL"]
+'''

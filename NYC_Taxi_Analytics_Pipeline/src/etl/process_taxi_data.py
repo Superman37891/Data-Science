@@ -6,8 +6,7 @@ import pandas as pd
 import numpy as np
 from io import BytesIO
 
-import src.config as config
-from src.config import YELLOW_TAXI_BUCKET_NAME
+from src.config import get_config
 
 from src.utils.s3_client import get_s3_client
 
@@ -21,10 +20,12 @@ logger = logging.getLogger(__name__)
 
 s3 = get_s3_client()
 
+YELLOW_TAXI_BUCKET_NAME = get_config('YELLOW_TAXI_BUCKET_NAME')
+
 detect_duplicates=True
 
-RAW_PREFIX = f"{config.YELLOW_TAXI_RAW_FOLDER}/"
-PROCESSED_PREFIX = f"{config.YELLOW_TAXI_PROCESSED_FOLDER}/"
+RAW_PREFIX = f"{get_config('YELLOW_TAXI_RAW_FOLDER')}/"
+PROCESSED_PREFIX = f"{get_config('YELLOW_TAXI_PROCESSED_FOLDER')}/"
 
 MIN_EXPECTED_COLUMNS = [
     "VendorID",
@@ -241,7 +242,7 @@ def extract_partition_from_key(key):
 
     return expected_year, expected_month
 
-def process_file_from_s3(key: str, detect_duplicates=detect_duplicates):
+def process_file_from_s3(key: str, to_detect_duplicates=detect_duplicates):
     """
        Processes a single raw S3 file and writes the cleaned version back to S3.
        """
@@ -256,7 +257,7 @@ def process_file_from_s3(key: str, detect_duplicates=detect_duplicates):
         f"{file_name}"
     )
 
-    if check_if_file_exists_in_s3(YELLOW_TAXI_BUCKET_NAME, processed_key) and detect_duplicates:
+    if check_if_file_exists_in_s3(YELLOW_TAXI_BUCKET_NAME, processed_key) and to_detect_duplicates:
         logger.info(f"Skipping already processed: {file_name}\n")
         return
 
@@ -320,7 +321,7 @@ def process_file_from_s3(key: str, detect_duplicates=detect_duplicates):
 
     logger.info(f"Saved: {processed_key}\n")
 
-def process_file_from_s3_with_retry(raw_key: str, detect_duplicates=detect_duplicates, retries=3):
+def process_file_from_s3_with_retry(raw_key: str, to_detect_duplicates=detect_duplicates, retries=3):
     """
     Retry-safe wrapper around ETL
     Guarantees:
@@ -330,7 +331,7 @@ def process_file_from_s3_with_retry(raw_key: str, detect_duplicates=detect_dupli
     """
     for attempt in range(retries):
         try:
-            process_file_from_s3(raw_key, detect_duplicates=detect_duplicates)
+            process_file_from_s3(raw_key, to_detect_duplicates=detect_duplicates)
             return
         except Exception as e:
             logger.warning(f"Attempt {attempt+1} failed for {raw_key}: Exception {e}\n")
