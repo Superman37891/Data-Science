@@ -13,9 +13,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-import os
-print("TLC_BASE_URL =", os.getenv("TLC_BASE_URL"))
-
 def main():
     logger.info("Pipeline started")
     year, month = get_latest_available()
