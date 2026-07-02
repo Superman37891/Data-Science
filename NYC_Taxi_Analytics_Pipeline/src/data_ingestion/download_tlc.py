@@ -39,7 +39,7 @@ def get_latest_available():
         for month in range(max_month, 0, -1):
             filename = f"yellow_tripdata_{year}-{month:02d}.parquet"
             url = f"{get_config('TLC_BASE_URL')}/{filename}"
-
+            logger.info(f"TLC_BASE_URL = {get_config('TLC_BASE_URL')!r}")
             response = requests.head(url)
 
             if response.status_code == 200:
