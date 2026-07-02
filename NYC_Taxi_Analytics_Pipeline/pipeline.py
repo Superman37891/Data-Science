@@ -2,6 +2,7 @@ from src.data_ingestion.download_tlc import get_all_available, stream_download_t
 from src.etl.process_taxi_data import process_file_from_s3_with_retry
 import logging
 import os
+import datetime as datetime
 LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -16,7 +17,10 @@ def main():
     logger.info("Pipeline started")
     # skip already processed data
     last = get_last_processed()
-    last_year, last_month = last
+    if last is None:
+        last_year, last_month = 2024, '01'
+    else:
+        last_year, last_month = last
 
     available = get_all_available()
     if not available:
