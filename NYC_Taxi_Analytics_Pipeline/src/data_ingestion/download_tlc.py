@@ -8,6 +8,8 @@ from datetime import datetime
 
 import logging
 
+START_YEAR = 2024  # The starting year to get data from
+
 logger = logging.getLogger(__name__)
 
 s3 = get_s3_client()
@@ -30,22 +32,25 @@ def save_last_processed(year, month, file_name):
         })
     )
 
-def get_latest_available():
+def get_all_available():
     current_time = datetime.now()
     current_year = current_time.year
     current_month = current_time.month
-    for year in range(current_year, 2023, -1):
+
+    available = []
+
+    for year in range(current_year, START_YEAR-1, -1):
         max_month = current_month if year == current_year else 12
+
         for month in range(max_month, 0, -1):
             filename = f"yellow_tripdata_{year}-{month:02d}.parquet"
             url = f"{config.TLC_BASE_URL}/{filename}"
-            logger.info(f"TLC_BASE_URL = {config.TLC_BASE_URL!r}")
-            response = requests.head(url)
 
-            if response.status_code == 200:
-                return year, month
+            r = requests.head(url)
+            if r.status_code == 200:
+                available.append((year, month))
 
-    return -1, -1
+    return sorted(available)
 
 def stream_download_to_s3(year: int, month: int) -> str:
     """
