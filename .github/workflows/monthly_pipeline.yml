@@ -27,7 +27,12 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('NYC_Taxi_Analytics_Pipeline/requirements.txt') }}
-
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.YELLOW_TAXI_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.YELLOW_TAXI_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.YELLOW_TAXI_AWS_REGION }}
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
