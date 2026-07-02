@@ -32,31 +32,37 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r NYC_Taxi_Analytics_Pipeline/requirements.txt
-      - name: Debug secrets presence
+      - name: Print config values
+        working-directory: "NYC Taxi Analytics Pipeline"
         run: |
-          if [ -z "${{ secrets.YELLOW_TAXI_AWS_ACCESS_KEY_ID }}" ]; then
-            echo "AWS KEY MISSING"
-            exit 1
-          fi
-          echo "AWS KEY EXISTS"
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.YELLOW_TAXI_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.YELLOW_TAXI_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.YELLOW_TAXI_AWS_REGION }}
+          python - <<'EOF'
+          import src.config as c
 
+          print("TLC_BASE_URL =", repr(c.TLC_BASE_URL))
+          print("BUCKET =", getattr(c, "YELLOW_TAXI_BUCKET_NAME", None))
+          EOF
+        env:
+          TLC_BASE_URL: ${{ secrets.TLC_BASE_URL }}
+          YELLOW_TAXI_BUCKET_NAME: ${{ secrets.YELLOW_TAXI_BUCKET_NAME }}
+          YELLOW_TAXI_RAW_FOLDER: ${{ secrets.YELLOW_TAXI_RAW_FOLDER }}
+          YELLOW_TAXI_PROCESSED_FOLDER: ${{ secrets.YELLOW_TAXI_PROCESSED_FOLDER }}
+          YELLOW_TAXI_S3_STAGING_DIR: ${{ secrets.YELLOW_TAXI_S3_STAGING_DIR }}
+          YELLOW_TAXI_AWS_REGION: ${{ secrets.YELLOW_TAXI_AWS_REGION }}
+          YELLOW_TAXI_DATABASE: ${{ secrets.YELLOW_TAXI_DATABASE }}
+          YELLOW_TAXI_TABLE_NAME: ${{ secrets.YELLOW_TAXI_TABLE_NAME }}
+          YELLOW_TAXI_ENRICHED_TABLE_NAME: ${{ secrets.YELLOW_TAXI_ENRICHED_TABLE_NAME }}
+          YELLOW_TAXI_DATASET: ${{ secrets.YELLOW_TAXI_DATASET }}
       - name: Run pipeline
         working-directory: NYC_Taxi_Analytics_Pipeline
         run: |
           python pipeline.py
         env:
           TLC_BASE_URL: ${{ secrets.TLC_BASE_URL }}
-          BUCKET_NAME: ${{ secrets.YELLOW_TAXI_BUCKET_NAME }}
-          RAW_FOLDER: ${{ secrets.YELLOW_TAXI_RAW_FOLDER }}
-          PROCESSED_FOLDER: ${{ secrets.YELLOW_TAXI_PROCESSED_FOLDER }}
-          S3_STAGING_DIR: ${{ secrets.YELLOW_TAXI_S3_STAGING_DIR }}
-          AWS_REGION: ${{ secrets.YELLOW_TAXI_AWS_REGION }}
+          YELLOW_TAXI_BUCKET_NAME: ${{ secrets.YELLOW_TAXI_BUCKET_NAME }}
+          YELLOW_TAXI_RAW_FOLDER: ${{ secrets.YELLOW_TAXI_RAW_FOLDER }}
+          YELLOW_TAXI_PROCESSED_FOLDER: ${{ secrets.YELLOW_TAXI_PROCESSED_FOLDER }}
+          YELLOW_TAXI_S3_STAGING_DIR: ${{ secrets.YELLOW_TAXI_S3_STAGING_DIR }}
+          YELLOW_TAXI_AWS_REGION: ${{ secrets.YELLOW_TAXI_AWS_REGION }}
 
       - name: Upload logs
         if: always()
