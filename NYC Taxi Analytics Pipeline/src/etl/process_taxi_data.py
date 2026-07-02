@@ -90,19 +90,20 @@ def check_if_file_exists_in_s3(bucket: str, key: str) -> bool:
         raise
 
 def log_quality(key, df):
-    logger.info(f"\nQUALITY REPORT: {key}")
+    logger.info(f"\nQUALITY REPORT: {key}\n")
 
     for _, row in df.iterrows():
 
-        logger.info(f"\nStage: {row['stage']}")
+        logger.info(f"\nStage: {row['stage']}\n")
         logger.info("-" * 40)
+        logger.info("\n")
 
         for col, value in row.items():
 
             if col == "stage":
                 continue
 
-            logger.info(f"{col:<30}: {value}")
+            logger.info(f"{col:<30}: {value}\n")
 
 def delete_s3_prefix(bucket, prefix):
     paginator = s3.get_paginator("list_objects_v2")
@@ -120,10 +121,10 @@ def delete_s3_prefix(bucket, prefix):
 def validate_schema(df):
     missing_columns = [col for col in MIN_EXPECTED_COLUMNS if col not in df.columns]
     if missing_columns:
-        logger.warning(f"Missing columns: {missing_columns}")
+        logger.warning(f"Missing columns: {missing_columns}\n")
         raise ValueError()
     else:
-        logger.info("Minimal schema requirements matched. Schema is valid.")
+        logger.info("Minimal schema requirements matched. Schema is valid.\n")
 
 def add_features(df):
     df = df.copy()
@@ -256,17 +257,17 @@ def process_file_from_s3(key: str, detect_duplicates=detect_duplicates):
     )
 
     if check_if_file_exists_in_s3(YELLOW_TAXI_BUCKET_NAME, processed_key) and detect_duplicates:
-        logger.info(f"Skipping already processed: {file_name}")
+        logger.info(f"Skipping already processed: {file_name}\n")
         return
 
-    logger.info(f"\nProcessing: {file_name}")
+    logger.info(f"\nProcessing: {file_name}\n")
 
     df_raw = read_parquet_from_s3(key)
 
     try:
         validate_schema(df_raw)
     except ValueError:
-        logger.warning(f"Invalid schema: {file_name}")
+        logger.warning(f"Invalid schema: {file_name}\n")
         return
 
     raw_df_len = len(df_raw)
@@ -317,7 +318,7 @@ def process_file_from_s3(key: str, detect_duplicates=detect_duplicates):
 
     write_parquet_to_s3(df_clean, processed_key)
 
-    logger.info(f"Saved: {processed_key}")
+    logger.info(f"Saved: {processed_key}\n")
 
 def process_file_from_s3_with_retry(raw_key: str, detect_duplicates=detect_duplicates, retries=3):
     """
@@ -332,28 +333,8 @@ def process_file_from_s3_with_retry(raw_key: str, detect_duplicates=detect_dupli
             process_file_from_s3(raw_key, detect_duplicates=detect_duplicates)
             return
         except Exception as e:
-            logger.warning(f"Attempt {attempt+1} failed for {raw_key}: Exception {e}")
+            logger.warning(f"Attempt {attempt+1} failed for {raw_key}: Exception {e}\n")
             if attempt == retries-1:
-                logger.warning(f"[FINAL FAIL] {raw_key}")
+                logger.warning(f"[FINAL FAIL] {raw_key}\n")
                 raise
             time.sleep(2**attempt)
-
-'''
-def main():
-
-    # =========================
-    # 1. GET RAW FILES
-    # =========================
-    raw_keys = sorted(get_s3_keys(prefix=RAW_PREFIX))
-
-    logger.info(f"Found {len(raw_keys)} raw files")
-
-    # =========================
-    # 2. PROCESS ONLY NEW FILES
-    # =========================
-    for key in raw_keys:
-        safe_process_file_from_s3(key, detect_duplicates=detect_duplicates)
-
-if __name__ == "__main__":
-    main()
-'''

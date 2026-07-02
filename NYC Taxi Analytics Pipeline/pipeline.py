@@ -2,10 +2,19 @@ from src.data_ingestion.download_tlc import get_latest_available, stream_downloa
 from src.etl.process_taxi_data import process_file_from_s3_with_retry
 
 import logging
+import os
+LOG_DIR = "logs"
+os.makedirs(LOG_DIR, exist_ok=True)
 
+logging.basicConfig(
+    filename=os.path.join(LOG_DIR, "pipeline.log"),
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)-s] %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 def main():
+    logger.info("Pipeline started")
     year, month = get_latest_available()
     # skip already processed data
 
@@ -15,6 +24,7 @@ def main():
 
     raw_key = stream_download_to_s3(year, month)
     process_file_from_s3_with_retry(raw_key)
+    logger.info(f"Pipeline finished for file {raw_key}")
 
 if __name__ == "__main__":
     main()
