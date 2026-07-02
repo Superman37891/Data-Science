@@ -1,4 +1,7 @@
+import time
+
 import boto3
+from botocore.exceptions import ClientError
 import pandas as pd
 import numpy as np
 from io import BytesIO
@@ -9,7 +12,6 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from src.config import BUCKET_NAME
-from src.utils.s3_file_exists import file_exists
 
 s3 = boto3.client("s3")
 
@@ -54,12 +56,31 @@ def write_parquet_to_s3(df, key):
 
     buffer = BytesIO()
     pq.write_table(table, buffer)
-    #buffer.seek(0)
+    buffer.seek(0)
     s3.put_object(
         Bucket = BUCKET_NAME,
         Key=key,
         Body=buffer.getvalue()
     )
+
+def check_if_file_exists_in_s3(bucket: str, key: str) -> bool:
+    """
+        Check if an S3 object exists using a HEAD request.
+        """
+
+    try:
+        s3.head_object(Bucket=bucket, Key=key)
+        return True
+
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+
+        # 404 means not found → file does not exist
+        if error_code == "404":
+            return False
+
+        # anything else is a real problem (permissions, network, etc.)
+        raise
 
 def log_quality(key, df):
     print(f"\nQUALITY REPORT: {key}")
@@ -212,102 +233,119 @@ def extract_partition_from_key(key):
 
     return expected_year, expected_month
 
-def main():
+def process_file_from_s3(key: str, detect_duplicates=True):
+    """
+       Processes a single raw S3 file and writes the cleaned version back to S3.
+       """
 
-    detect_duplicates = True
+    file_name = key.split("/")[-1]
+
+    expected_year, expected_month = extract_partition_from_key(key)
+
+    processed_key = (
+        f"{PROCESSED_PREFIX}"
+        f"year={expected_year}/month={str(expected_month).zfill(2)}/"
+        f"{file_name}"
+    )
+
+    if check_if_file_exists_in_s3(BUCKET_NAME, processed_key) and detect_duplicates:
+        print(f"Skipping already processed: {file_name}")
+        return
+
+    print(f"\nProcessing: {file_name}")
+
+    df_raw = read_parquet_from_s3(key)
+
+    try:
+        validate_schema(df_raw)
+    except ValueError:
+        print(f"Invalid schema: {file_name}")
+        return
+
+    raw_df_len = len(df_raw)
+
+    # -------------------------
+    # Transform
+    # -------------------------
+    df_engineered = add_features(df_raw)
+
+    pre_cleaned_issues = get_issues(df_engineered, expected_year, expected_month)
+
+    df_clean = remove_bad_rows(df_engineered, expected_year, expected_month)
+
+    post_cleaned_issues = get_issues(df_clean, expected_year, expected_month)
+
+    cleaned_df_len = len(df_clean)
+
+    df_clean = df_clean.drop(columns=["valid_payment"])
+
+    processed_key = (
+        f"{PROCESSED_PREFIX}"
+        f"year={expected_year}/month={str(expected_month).zfill(2)}/"
+        f"{file_name}"
+    )
+
+    # ---------------------------
+    # Logging
+    # ---------------------------
+    summary_df = pd.DataFrame([{
+        "stage": "summary",
+        "raw_rows": raw_df_len,
+        "cleaned_rows": cleaned_df_len,
+        "rows_lost": raw_df_len - cleaned_df_len,
+        "loss_percent": ((1 - cleaned_df_len / raw_df_len) * 100 if raw_df_len else 0)
+    }])
+
+    issues_df = pd.DataFrame([
+        {"stage": "pre-cleaned", **pre_cleaned_issues},
+        {"stage": "post-cleaned", **post_cleaned_issues}
+    ])
+
+    log_quality(key=key, df=issues_df)
+    log_quality(key=key, df=summary_df)
+
+    # ------------------------
+    # Write output
+    # ------------------------
+
+    write_parquet_to_s3(df_clean, processed_key)
+
+    print(f"Saved: {processed_key}")
+
+def process_file_from_s3_with_retry(key: str, detect_duplicates=True, retries=3):
+    """
+    Retry-safe wrapper around ETL
+    Guarantees:
+    - No duplicate processing
+    - Safe reruns
+    - failure isolation per file
+    """
+    for attempt in range(retries):
+        try:
+            process_file_from_s3(key, detect_duplicates=detect_duplicates)
+            return
+        except Exception as e:
+            print(f"Attempt {attempt+1} failed for {key}: Exception {e}")
+            if attempt == retries-1:
+                print(f"[FINAL FAIL] {key}")
+                raise
+            time.sleep(2**attempt)
+'''
+def main():
 
     # =========================
     # 1. GET RAW FILES
     # =========================
-    raw_keys = get_s3_keys(prefix=RAW_PREFIX)
-    raw_keys = sorted(raw_keys)
+    raw_keys = sorted(get_s3_keys(prefix=RAW_PREFIX))
 
     print(f"Found {len(raw_keys)} raw files")
 
     # =========================
-    # 2. GET ALL PROCESSED KEYS ONCE (FAST)
-    # =========================
-    processed_keys = set(get_s3_keys(prefix=PROCESSED_PREFIX))
-    processed_keys = sorted(processed_keys)
-
-    processed_files = {
-    key.split("/")[-1] for key in processed_keys
-    }
-
-    print(f"Found {len(processed_files)} processed files")
-
-    # =========================
-    # 3. PROCESS ONLY NEW FILES
+    # 2. PROCESS ONLY NEW FILES
     # =========================
     for key in raw_keys:
-        file_name = key.split("/")[-1]
-        if detect_duplicates and file_name in processed_files:
-            print(f"Skipping because already processed: {file_name}")
-            continue
-
-        print(f"\nProcessing: {file_name}")
-
-        # -------------------------
-        # Load + transform
-        # -------------------------
-
-        expected_year, expected_month = extract_partition_from_key(key)
-
-        df_raw = read_parquet_from_s3(key)
-        try:
-            validate_schema(df_raw)
-        except ValueError:
-            continue
-        raw_df_len = len(df_raw)
-
-        df_engineered = add_features(df_raw)
-
-        pre_cleaned_issues = get_issues(df_engineered, expected_year, expected_month)
-        # Check if minimal schema requirements are present
-
-
-        # -------------------------
-        # Partition extraction
-        # -------------------------
-
-        df_clean = remove_bad_rows(df_engineered, expected_year, expected_month)
-        post_cleaned_issues = get_issues(df_clean, expected_year, expected_month)
-        cleaned_df_len = len(df_clean)
-
-        df_clean = df_clean.drop(columns=["valid_payment"])# compute once
-
-        processed_key = (
-            f"{PROCESSED_PREFIX}"
-            f"year={expected_year}/month={str(expected_month).zfill(2)}/"
-            f"{file_name}"
-        )
-
-        row_loss_percent = ((1-cleaned_df_len/raw_df_len)*100 if raw_df_len > 0 else 0)
-        issues_df = pd.DataFrame([
-            {"stage": "pre-cleaned", **pre_cleaned_issues},
-            {"stage": "cleaned", **post_cleaned_issues}
-            ])
-        summary_df = pd.DataFrame([
-            {
-                "stage": "summary",
-                "raw_rows": raw_df_len,
-                "cleaned_rows": cleaned_df_len,
-                "rows_lost": raw_df_len - cleaned_df_len,
-                "loss_percent": row_loss_percent
-            }
-        ])
-
-        log_quality(key=key, df=issues_df)
-        log_quality(key=key, df=summary_df)
-        # The "QUALITY REPORT: {key}" gets printed twice due to
-        # calling log_quality twice, which is not intended
-
-        # -------------------------
-        # Write output
-        # -------------------------
-        write_parquet_to_s3(df_clean, processed_key)
-
-        print(f"Saved: {processed_key}")
+        safe_process_file_from_s3(key, detect_duplicates=True)
 
 if __name__ == "__main__":
     main()
+'''

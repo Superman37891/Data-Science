@@ -31,7 +31,14 @@ def run_query(query):
 # ========================
 st.sidebar.header("Filters")
 
-year_selected = st.sidebar.selectbox("Select Year", ["All Years", 2026, 2025, 2024])
+@st.cache_data(ttl=3600)
+def get_available_years():
+    available_years_df = run_query(queries.AVAILABLE_YEARS_QUERY)
+    return available_years_df["year"].tolist()
+
+available_years = get_available_years()
+year_options = ["All Years"] + available_years
+year_selected = st.sidebar.selectbox("Select Year", year_options)
 
 # Create dataframes through Athena queries
 if year_selected == "All Years":
@@ -184,6 +191,6 @@ if st.button("Download Monthly Summary Data"):
     st.download_button(
         label=f"Download {year_selected}_{month_selected:02d} Summary Data as CSV",
         data=selected_month_df.to_csv(index=False).encode("utf-8"),
-        file_name=f"nyc_taxi_{year_selected}/{month_selected:02d}.csv",
+        file_name=f"nyc_taxi_{year_selected}-{month_selected:02d}.csv",
         mime="text/csv"
     )
