@@ -3,16 +3,16 @@ import os
 
 load_dotenv()
 
-BUCKET_NAME = os.getenv("BUCKET_NAME")
-S3_STAGING_DIR = os.getenv("S3_STAGING_DIR")
-AWS_REGION = os.getenv("AWS_REGION")
+YELLOW_TAXI_BUCKET_NAME = os.getenv("YELLOW_TAXI_BUCKET_NAME")
+YELLOW_TAXI_S3_STAGING_DIR = os.getenv("YELLOW_TAXI_S3_STAGING_DIR")
+YELLOW_TAXI_AWS_REGION = os.getenv("YELLOW_TAXI_AWS_REGION")
 
-DATASET = "yellow_taxi"
-RAW_FOLDER = os.getenv("RAW_FOLDER", "raw_data/yellow_taxi")
-PROCESSED_FOLDER = os.getenv("PROCESSED_FOLDER", "processed_data/yellow_taxi")
-TABLE_NAME = "yellow_taxi_processed"
-ENRICHED_TABLE_NAME = "yellow_taxi_enriched"
-DATABASE = "taxi_data"
-TLC_BASE_URL = 'https://d37ci6vzurychx.cloudfront.net/trip-data'
+YELLOW_TAXI_DATASET = os.getenv("YELLOW_TAXI_DATASET")
+YELLOW_TAXI_RAW_FOLDER = os.getenv("YELLOW_TAXI_RAW_FOLDER", "raw_data/yellow_taxi")
+YELLOW_TAXI_PROCESSED_FOLDER = os.getenv("YELLOW_TAXI_PROCESSED_FOLDER", "processed_data/yellow_taxi")
+YELLOW_TAXI_TABLE_NAME = os.getenv("YELLOW_TAXI_TABLE_NAME")
+YELLOW_TAXI_ENRICHED_TABLE_NAME = os.getenv("YELLOW_TAXI_ENRICHED_TABLE_NAME")
+YELLOW_TAXI_DATABASE = os.getenv("YELLOW_TAXI_DATABASE")
+TLC_BASE_URL = os.getenv("TLC_BASE_URL")
 
-print(PROCESSED_FOLDER)
+print(YELLOW_TAXI_PROCESSED_FOLDER)

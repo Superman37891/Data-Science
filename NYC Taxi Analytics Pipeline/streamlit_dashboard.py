@@ -14,11 +14,11 @@ import streamlit as st
 import src.config as config
 
 connection = connect(
-    s3_staging_dir=config.S3_STAGING_DIR,
-    region_name=config.AWS_REGION,
+    s3_staging_dir=config.YELLOW_TAXI_S3_STAGING_DIR,
+    region_name=config.YELLOW_TAXI_AWS_REGION,
     aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
     aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
-    schema_name=config.DATABASE
+    schema_name=config.YELLOW_TAXI_DATABASE
 )
 
 @st.cache_data(ttl=3600)

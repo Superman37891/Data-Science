@@ -3,7 +3,7 @@ import src.config
 
 athena = boto3.client("athena")
 
-DATABASE = src.config.DATABASE
+DATABASE = src.config.YELLOW_TAXI_DATABASE
 
 OUTPUT_LOCATION = "s3://nyc-taxi-analytics-pipeline-37891/athena-results/"
 

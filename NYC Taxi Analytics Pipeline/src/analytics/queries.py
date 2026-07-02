@@ -3,13 +3,13 @@ import src.config as config
 # Available years query
 AVAILABLE_YEARS_QUERY = f"""
 SELECT DISTINCT year
-FROM {config.TABLE_NAME}
+FROM {config.YELLOW_TAXI_TABLE_NAME}
 ORDER BY year DESC
 """
 
 # Base table
-YELLOW_TAXI_PROCESSED_QUERY = f"""
-CREATE EXTERNAL TABLE {config.TABLE_NAME} (
+YELLOW_TAXI_PROCESSED_CREATE_QUERY = f"""
+CREATE EXTERNAL TABLE {config.YELLOW_TAXI_TABLE_NAME} (
   `vendorid` int, 
   `tpep_pickup_datetime` timestamp, 
   `tpep_dropoff_datetime` timestamp, 
@@ -30,14 +30,14 @@ STORED AS INPUTFORMAT
 OUTPUTFORMAT 
   'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
 LOCATION
-  's3://{config.BUCKET_NAME}/{config.PROCESSED_FOLDER}'
+  's3://{config.YELLOW_TAXI_BUCKET_NAME}/{config.YELLOW_TAXI_PROCESSED_FOLDER}'
 TBLPROPERTIES (
   'projection.enabled'='true', 
   'projection.month.type'='enum', 
   'projection.month.values'='01,02,03,04,05,06,07,08,09,10,11,12', 
   'projection.year.range'='2020,2040', 
   'projection.year.type'='integer', 
-  'storage.location.template'='s3://{config.BUCKET_NAME}/{config.PROCESSED_FOLDER}/year=${{year}}/month=${{month}}/'
+  'storage.location.template'='s3://{config.YELLOW_TAXI_BUCKET_NAME}/{config.YELLOW_TAXI_PROCESSED_FOLDER}/year=${{year}}/month=${{month}}/'
 )
 
 """
@@ -45,7 +45,7 @@ TBLPROPERTIES (
 # Create a view adding a month_date column
 # to help with dates visualization software
 YELLOW_TAXI_ENRICHED_CREATE_QUERY = f"""
-CREATE OR REPLACE VIEW taxi_data.{config.ENRICHED_TABLE_NAME} AS
+CREATE OR REPLACE VIEW taxi_data.{config.YELLOW_TAXI_ENRICHED_TABLE_NAME} AS
 SELECT
     *,
     DATE_PARSE(
@@ -56,7 +56,7 @@ SELECT
         ),
         '%Y-%m-%d'
     ) AS month_date
-FROM {config.TABLE_NAME};
+FROM {config.YELLOW_TAXI_TABLE_NAME};
 """
 
 
@@ -73,7 +73,7 @@ SELECT
   ROUND(AVG(speed_mph), 4) avg_speed_mph,
   ROUND(SUM(SUM(fare_amount)) OVER (ORDER BY month_date ASC), 4) cumulative_revenue
 FROM
-  {config.ENRICHED_TABLE_NAME}
+  {config.YELLOW_TAXI_ENRICHED_TABLE_NAME}
 GROUP BY year, month, month_date
 """
 # Create a KPI for monthly summary
@@ -200,7 +200,7 @@ SELECT
     ROUND(AVG(trip_duration_min), 4) AS avg_trip_duration_min,
     ROUND(AVG(trip_distance / (NULLIF(trip_duration_min, 0) / 60.0)), 4) AS avg_speed_mph
     
-FROM {config.TABLE_NAME}
+FROM {config.YELLOW_TAXI_TABLE_NAME}
 GROUP BY 1
 ORDER BY hour_of_day;
 """
@@ -216,7 +216,7 @@ def year_hourly_trips_query(year_selected):
         ROUND(AVG(trip_duration_min), 4) AS avg_trip_duration_min,
         ROUND(AVG(trip_distance / (NULLIF(trip_duration_min, 0) / 60.0)), 4) AS avg_speed_mph
         
-    FROM {config.TABLE_NAME}
+    FROM {config.YELLOW_TAXI_TABLE_NAME}
     WHERE year={year_selected}
     GROUP BY 1
     ORDER BY hour_of_day;
@@ -242,7 +242,7 @@ SELECT
     ROUND(AVG(trip_distance), 4) AS avg_distance,
     ROUND(AVG(speed_mph), 4) AS avg_speed_mph
 
-FROM {config.ENRICHED_TABLE_NAME}
+FROM {config.YELLOW_TAXI_ENRICHED_TABLE_NAME}
 
 GROUP BY 
     CASE 
@@ -328,7 +328,7 @@ SELECT
     ROUND(AVG(trip_distance), 4) AS avg_distance,
     ROUND(AVG(speed_mph), 4) AS avg_speed_mph
 
-FROM {config.ENRICHED_TABLE_NAME}
+FROM {config.YELLOW_TAXI_ENRICHED_TABLE_NAME}
 
 GROUP BY 
     CASE 
