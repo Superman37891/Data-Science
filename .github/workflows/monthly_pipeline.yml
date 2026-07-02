@@ -33,7 +33,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r NYC_Taxi_Analytics_Pipeline/requirements.txt
       - name: Print config values
-        working-directory: "NYC_Taxi Analytics_Pipeline"
+        working-directory: "NYC_Taxi_Analytics_Pipeline"
         run: |
           python - <<'EOF'
           import src.config as c
