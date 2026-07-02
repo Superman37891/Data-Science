@@ -3,7 +3,7 @@ name: Monthly NYC Taxi Pipeline
 on:
   push:
     paths:
-      - "NYC_Taxi Analytics_Pipeline/**"
+      - "NYC_Taxi_Analytics_Pipeline/**"
   workflow_dispatch:
   schedule:
     # Runs on the 5th day of every month at 6:00 UTC
