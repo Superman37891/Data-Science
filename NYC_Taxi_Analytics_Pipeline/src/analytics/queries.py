@@ -1,6 +1,7 @@
 import src.config as config
 
 # Available years query
+
 AVAILABLE_YEARS_QUERY = f"""
 SELECT DISTINCT year
 FROM {config.YELLOW_TAXI_TABLE_NAME}

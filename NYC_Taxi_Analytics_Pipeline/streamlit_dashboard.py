@@ -1,5 +1,8 @@
 import sys
 import os
+import streamlit as st
+for key, value in st.secrets.items():
+    os.environ[key] = str(value)
 
 # Adds the root directory to the python path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -10,13 +13,12 @@ import src.analytics.queries as queries # Now this should work
 
 from pyathena import connect
 import pandas as pd
-import streamlit as st
 
 connection = connect(
     s3_staging_dir=st.secrets["YELLOW_TAXI_S3_STAGING_DIR"],
     region_name=st.secrets["YELLOW_TAXI_AWS_REGION"],
-    aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
-    aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
+    aws_access_key_id=st.secrets["YELLOW_TAXI_AWS_ACCESS_KEY_ID"],
+    aws_secret_access_key=st.secrets["YELLOW_TAXI_AWS_SECRET_ACCESS_KEY"],
     schema_name=st.secrets["YELLOW_TAXI_DATABASE"]
 )
 
