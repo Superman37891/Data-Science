@@ -1,6 +1,8 @@
 import sys
 import os
 import streamlit as st
+for key, value in st.secrets.items():
+    os.environ[key] = str(value)
 
 # Adds the root directory to the python path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
