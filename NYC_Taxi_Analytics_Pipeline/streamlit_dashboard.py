@@ -24,7 +24,11 @@ connection = connect(
 
 @st.cache_data(ttl=3600)
 def run_query(query):
-    return pd.read_sql(query, connection)
+    try:
+        return pd.read_sql(query, connection)
+    except Exception as e:
+        st.exception(e)
+        raise
 
 
 # ========================
