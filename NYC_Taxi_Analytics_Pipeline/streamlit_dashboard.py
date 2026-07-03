@@ -39,7 +39,8 @@ st.sidebar.header("Filters")
 @st.cache_data(ttl=3600)
 def get_available_years():
     available_years_df = run_query(queries.AVAILABLE_YEARS_QUERY)
-    return available_years_df["year"].tolist()
+    available_years_df.columns = available_years_df.columns.str.lower()
+    return sorted(available_years_df["year"].astype(int).tolist(), reverse=True)
 
 available_years = get_available_years()
 year_options = ["All Years"] + available_years
