@@ -6,6 +6,9 @@ def _get(name: str) -> str:
         raise ValueError(f"Missing required environment variable: {name}")
     return value
 
+START_YEAR = 2024
+END_YEAR = 2030
+
 YELLOW_TAXI_BUCKET_NAME = _get("YELLOW_TAXI_BUCKET_NAME")
 YELLOW_TAXI_S3_STAGING_DIR = _get("YELLOW_TAXI_S3_STAGING_DIR")
 YELLOW_TAXI_AWS_REGION = _get("YELLOW_TAXI_AWS_REGION")

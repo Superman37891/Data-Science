@@ -1,6 +1,8 @@
+import config
 from src.data_ingestion.download_tlc import get_all_available, stream_download_to_s3, get_last_processed, save_last_processed
 from src.etl.process_taxi_data import process_file_from_s3_with_retry
 import src.utils.logger as logger
+from src.config import START_YEAR, END_YEAR
 import logging
 
 logger.setup_logger()
@@ -11,10 +13,10 @@ def main():
     # skip already processed data
     last = get_last_processed()
     if last is None:
-        last_year, last_month = 2024, '01'
+        last_year, last_month = START_YEAR, 1
     else:
-        last_year = last["year"]
-        last_month = last["month"]
+        last_year = int(last["year"])
+        last_month = int(last["month"])
 
     available = get_all_available()
     if not available:
@@ -27,16 +29,14 @@ def main():
 
     to_process = []
     for year, month in available:
-        if not last:
-            to_process.append((year, month))
-        elif (year, month) > (last_year, last_month):
+        if (year, month) > (last_year, last_month):
             to_process.append((year, month))
 
     if not to_process:
         logger_object.info("No new data to process (already up to date)")
         return
 
-    logger_object.info("Backfill queue size: {len(to_process)}")
+    logger_object.info(f"Backfill queue size: {len(to_process)}")
 
     for year, month in to_process:
         logger_object.info(f"Processing dataset: {year}-{month:02d}")

@@ -4,6 +4,7 @@ import requests
 from src.utils.s3_client import get_s3_client
 from src.etl.process_taxi_data import check_if_file_exists_in_s3
 import src.config as config
+from src.config import END_YEAR
 from datetime import datetime
 
 import logging
@@ -21,8 +22,10 @@ YELLOW_TAXI_RAW_FOLDER = config.YELLOW_TAXI_RAW_FOLDER
 def get_last_processed():
     try:
         obj = s3.get_object(Bucket=YELLOW_TAXI_BUCKET_NAME, Key="meta/last_processed.json")
+        logger.info("get_last_processed() succeeded.")
         return json.loads(obj["Body"].read())
-    except:
+    except Exception as e:
+        logger.info(f"get_last_processed() failed. Exception: {e}")
         return None
 
 def save_last_processed(year, month, file_name):
@@ -44,15 +47,18 @@ def get_all_available():
     available = []
 
     for year in range(current_year, START_YEAR-1, -1):
-        max_month = current_month if year == current_year else 12
+        if year > END_YEAR:
+            continue
+        else:
+            max_month = current_month if year == current_year else 12
 
-        for month in range(max_month, 0, -1):
-            filename = f"yellow_tripdata_{year}-{month:02d}.parquet"
-            url = f"{TLC_BASE_URL}/{filename}"
+            for month in range(max_month, 0, -1):
+                filename = f"yellow_tripdata_{year}-{month:02d}.parquet"
+                url = f"{TLC_BASE_URL}/{filename}"
 
-            r = requests.head(url)
-            if r.status_code == 200:
-                available.append((year, month))
+                r = requests.head(url)
+                if r.status_code == 200:
+                    available.append((year, month))
 
     return sorted(available)
 
