@@ -1,4 +1,3 @@
-import config
 from src.data_ingestion.download_tlc import get_all_available, stream_download_to_s3, get_last_processed, save_last_processed
 from src.etl.process_taxi_data import process_file_from_s3_with_retry
 import src.utils.logger as logger
