@@ -1,9 +1,0 @@
-sentence-transformers
-psycopg2-binary
-pgvector
-gradio
-#numpy
-time
-python-dotenv
-#nltk
-huggingface_hub

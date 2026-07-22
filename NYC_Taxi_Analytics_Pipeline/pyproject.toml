@@ -1,9 +1,0 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "nyc-taxi-pipeline"
-version = "0.1.0"
-description = "NYC Taxi Data Engineering Pipeline"
-requires-python = ">=3.9"
