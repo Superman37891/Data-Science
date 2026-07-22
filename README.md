@@ -1,6 +1,6 @@
 AI / Machine Learning:
 
-* PostgreSQL Documentation AI Assistant: https://github.com/Superman37891/PostgreSQL_Documentation_AI_Assistant
+* PostgreSQL Documentation AI Assistant: https://huggingface.co/spaces/Superman37891/PostgreSQL_Documentation_AI_Assistant
 
 * HelmNet: https://github.com/Superman37891/HelmNet
 
